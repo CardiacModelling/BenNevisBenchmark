@@ -100,4 +100,4 @@ print('Saving...')
 # make directory if it doesn't exist
 if not os.path.exists('result'):
     os.makedirs('result')
-json.dump(result, open('./result/baseline_grid_calc.json', 'w'))
+json.dump(result, open(f'./result/baseline_grid_calc_{SIDE}_{N}.json', 'w'))
