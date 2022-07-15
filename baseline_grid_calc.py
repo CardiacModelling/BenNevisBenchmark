@@ -10,7 +10,7 @@ x_max, y_max = nevis.dimensions()
 np.random.seed(1)
 
 # side length of the grid
-SIDE = 5000
+SIDE = 100
 # times of shuffling
 N = 80
 
