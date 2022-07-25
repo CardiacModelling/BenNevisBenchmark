@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pickle
+from config import GRID_SIDE
 
 nevis.download_os_terrain_50()
 
@@ -134,8 +135,7 @@ def read_results(prefix):
     return points_list, function_values, distance_values
     
 if __name__ == '__main__':
-    SIDE = 2000
-    points_list, function_values, distance_values = read_results(f'grid_search_{SIDE}_')
+    points_list, function_values, distance_values = read_results(f'grid_search_{GRID_SIDE}_')
     t = nevis.Timer()
     plot_random_method(points_list, function_values, distance_values)
     print(t.format())
