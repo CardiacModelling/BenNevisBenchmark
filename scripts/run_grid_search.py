@@ -52,8 +52,8 @@ def run_grid_search():
 
     print("Saving data...")
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    os.makedirs('result', exist_ok=True)
-    pickle.dump(data, open(f"result/grid_search_{SIDE}_{N}_{timestamp}.pickle", "wb"))
+    os.makedirs('../result', exist_ok=True)
+    pickle.dump(data, open(f"../result/grid_search_{SIDE}_{N}_{timestamp}.pickle", "wb"))
 
 
 if __name__ == '__main__':

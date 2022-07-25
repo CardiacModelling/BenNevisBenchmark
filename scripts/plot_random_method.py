@@ -123,20 +123,13 @@ def read_results(prefix):
     points_list = []
     function_values = []
     distance_values = []
-    for file in os.listdir('result/'):
+    for file in os.listdir('../result/'):
         if file.startswith(prefix) and file.endswith('.pickle'):
             print('Reading {}...'.format(file))
 
-            data  = pickle.load(open('result/' + file, 'rb'))
+            data  = pickle.load(open('../result/' + file, 'rb'))
             points_list.extend(data.get('points', []))
             function_values.extend(data.get('function_values', []))
             distance_values.extend(data.get('distance_values', []))
         
     return points_list, function_values, distance_values
-    
-if __name__ == '__main__':
-    points_list, function_values, distance_values = read_results(f'grid_search_{GRID_SIDE}_')
-    t = nevis.Timer()
-    plot_random_method(points_list, function_values, distance_values)
-    print(t.format())
-    plt.show()
