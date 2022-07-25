@@ -1,6 +1,8 @@
 import nevis
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import pickle
 
 nevis.download_os_terrain_50()
 
@@ -11,7 +13,7 @@ def dist_to_ben(x, y):
 x_max, y_max = nevis.dimensions()
 np.random.seed(1)
 
-def plot_random_method(points_list, function_values=None):
+def plot_random_method(points_list=None, function_values=None, distance_values=None):
     """
     Plot random method results.
 
@@ -19,14 +21,23 @@ def plot_random_method(points_list, function_values=None):
     ----------
     points_list : list of list of tuple of shape (m, n, 2)
         List of visited points to be plotted. m is the number of executions,
-        and n is the nubmer of evaluations per execution.
-    function_values : list of float
-        List of function values to be plotted.
+        and n is the nubmer of evaluations per execution. If None, ``function_values``
+        and ``distance_values`` must be provided.
+    function_values : list of list of float
+        List of function values to be plotted. If None, they are obtained using
+        ``points_list`` by evaluating the function at each point.
+    distance_values : list of list of float
+        List of distance values to be plotted. If None, they are obtained using
+        ``points_list`` by calculating the distance to the Ben Nevis at each point.
     
     Returns
     -------
     fig, (ax1, ax2) : tuple of matplotlib.pyplot.Figure and (ax1, ax2)
     """
+
+    if points_list is None:
+        assert function_values is not None and distance_values is not None, \
+            "Either points_list or (function_values and distance_values) must be provided."
 
     def calc(values_list, method):
         random_results = []
@@ -57,6 +68,8 @@ def plot_random_method(points_list, function_values=None):
         function_values = []
         for points in points_list:
             function_values.append([f(x, y) for x, y in points])
+    
+    print(f'Length of function_values: {len(function_values)}')
     re_mean, re_0, re_25, re_75, re_100 = calc(function_values, 'max')
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 10))
@@ -77,11 +90,13 @@ def plot_random_method(points_list, function_values=None):
     
 
     # Distances to Ben Nevis
-    print('Calculating distances to Ben Nevis...')
-    distance_values = []
-    for points in points_list:
-        distance_values.append([dist_to_ben(x, y) for x, y in points])
+    if distance_values is None:
+        print('Calculating distances to Ben Nevis...')
+        distance_values = []
+        for points in points_list:
+            distance_values.append([dist_to_ben(x, y) for x, y in points])
     
+    print(f'Length of distance_values: {len(distance_values)}')
     re_mean, re_0, re_25, re_75, re_100 = calc(distance_values, 'min')
 
     ax2.set_xscale('log') # log scale for x axis
@@ -100,13 +115,28 @@ def plot_random_method(points_list, function_values=None):
     
 
     return fig, (ax1, ax2)
+
+
+def read_results(prefix):
+    """Read results from all pickle files with prefix ``prefix``."""   
+    points_list = []
+    function_values = []
+    distance_values = []
+    for file in os.listdir('result/'):
+        if file.startswith(prefix) and file.endswith('.pickle'):
+            print('Reading {}...'.format(file))
+
+            data  = pickle.load(open('result/' + file, 'rb'))
+            points_list.extend(data.get('points', []))
+            function_values.extend(data.get('function_values', []))
+            distance_values.extend(data.get('distance_values', []))
+        
+    return points_list, function_values, distance_values
     
 if __name__ == '__main__':
-    def random_search(n):    
-        return [(np.random.uniform(0, x_max), np.random.uniform(0, y_max)) for _ in range(n)]
-    points = [random_search(int(1e4)) for _ in range(100)]
-
+    SIDE = 2000
+    points_list, function_values, distance_values = read_results(f'grid_search_{SIDE}_')
     t = nevis.Timer()
-    plot_random_method(points)
+    plot_random_method(points_list, function_values, distance_values)
     print(t.format())
     plt.show()
