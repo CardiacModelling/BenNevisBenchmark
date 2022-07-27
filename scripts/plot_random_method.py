@@ -14,7 +14,17 @@ def dist_to_ben(x, y):
 x_max, y_max = nevis.dimensions()
 np.random.seed(1)
 
-def plot_random_method(points_list=None, function_values=None, distance_values=None):
+
+def pad_list(ls):
+    if not ls:
+        return []
+    length = max(len(l) for l in ls)
+    return [
+        list(l) + [l[-1]] * (length - len(l))
+        for l in ls
+    ]
+
+def plot_random_method(points_list=None, function_values=None, distance_values=None, method_name=''):
     """
     Plot random method results.
 
@@ -74,7 +84,7 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
     re_mean, re_0, re_25, re_75, re_100 = calc(function_values, 'max')
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 10))
-    fig.suptitle('Performance of grid search')
+    fig.suptitle(f'Performance of {method_name}')
 
     ax1.set_xscale('log') # log scale for x axis
     ax1.plot(re_mean, label='mean')
@@ -128,8 +138,12 @@ def read_results(prefix):
             print('Reading {}...'.format(file))
 
             data  = pickle.load(open('../result/' + file, 'rb'))
-            points_list.extend(data.get('points', []))
+            points_list.extend(data.get('points_list', []))
             function_values.extend(data.get('function_values', []))
             distance_values.extend(data.get('distance_values', []))
+
+    points_list = pad_list(points_list)
+    function_values = pad_list(function_values)
+    distance_values = pad_list(distance_values)
         
-    return points_list, function_values, distance_values
+    return points_list or None, function_values or None, distance_values or None
