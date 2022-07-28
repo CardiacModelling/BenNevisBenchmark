@@ -4,7 +4,7 @@ import math
 import time
 import pickle
 import os
-from config import GRID_SIDE as SIDE, GRID_N as N
+from config import GRID_SIDE as SIDE, GRID_N as N, GRID_DOWNSAMPLING as DOWNSAMPLING
 
 def run_grid_search():
     x_max, y_max = nevis.dimensions()
@@ -18,6 +18,7 @@ def run_grid_search():
         rng = np.random.default_rng()
         random_results = rng.permuted(np.tile(one_result, (N, 1)), axis=1)
         random_results = (np.maximum if method == 'max' else np.minimum).accumulate(random_results, axis=1)
+        random_results = random_results[:, DOWNSAMPLING - 1::DOWNSAMPLING]
         return random_results
 
     print("Getting shuffled function results...")
@@ -47,13 +48,14 @@ def run_grid_search():
         "points_list": [],
         "function_values": function_shuffled_results,
         "distance_values": distance_shuffled_results,
+        "downsampling": DOWNSAMPLING,
     }
 
 
     print("Saving data...")
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     os.makedirs('../result', exist_ok=True)
-    pickle.dump(data, open(f"../result/grid_search_{SIDE}_{N}_{timestamp}.pickle", "wb"))
+    pickle.dump(data, open(f"../result/grid_search_{SIDE}_{DOWNSAMPLING}_{N}_{timestamp}.pickle", "wb"))
 
 
 if __name__ == '__main__':

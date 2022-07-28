@@ -20,11 +20,12 @@ def pad_list(ls):
         return []
     length = max(len(l) for l in ls)
     return [
-        list(l) + [l[-1]] * (length - len(l))
+        np.append(l, [l[-1]] * (length - len(l)))
         for l in ls
     ]
 
-def plot_random_method(points_list=None, function_values=None, distance_values=None, method_name=''):
+def plot_random_method(points_list=None, function_values=None, distance_values=None, method_name='',
+    downsampling=1):
     """
     Plot random method results.
 
@@ -40,6 +41,10 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
     distance_values : list of list of float
         List of distance values to be plotted. If None, they are obtained using
         ``points_list`` by calculating the distance to the Ben Nevis at each point.
+    method_name : str
+        Name of the method.
+    downsampling : int
+        Downsampling factor.
     
     Returns
     -------
@@ -80,6 +85,9 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
         for points in points_list:
             function_values.append([f(x, y) for x, y in points])
     
+    length = len(function_values[0])
+    x_values = np.arange(downsampling - 1, length * downsampling, downsampling)
+    
     print(f'Length of function_values: {len(function_values)}')
     re_mean, re_0, re_25, re_75, re_100 = calc(function_values, 'max')
 
@@ -87,14 +95,15 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
     fig.suptitle(f'Performance of {method_name}')
 
     ax1.set_xscale('log') # log scale for x axis
-    ax1.plot(re_mean, label='mean')
-    ax1.plot(re_0, label='0%')
-    ax1.plot(re_25, label='25%')
-    ax1.plot(re_75, label='75%')
-    ax1.plot(re_100, label='100%')
+    ax1.plot(x_values, re_mean, label='mean')
+    ax1.plot(x_values, re_0, label='0%')
+    ax1.plot(x_values, re_25, label='25%')
+    ax1.plot(x_values, re_75, label='75%')
+    ax1.plot(x_values, re_100, label='100%')
     ax1.axhline(y=1344.9, color='r', linestyle='--', label='Ben Nevis')
-    ax1.fill_between(range(len(re_mean)), re_25, re_75, color='#5CA4FA', alpha=0.5)
-    ax1.fill_between(range(len(re_mean)), re_0, re_100, color='#5CF7FA', alpha=0.25)
+    ax1.axhline(y=1309, color='#FFA500', linestyle='--', label='Ben Macdui')
+    ax1.fill_between(x_values, re_25, re_75, color='#5CA4FA', alpha=0.5)
+    ax1.fill_between(x_values, re_0, re_100, color='#5CF7FA', alpha=0.25)
     ax1.legend(loc='lower right')
     ax1.set_xlabel('Number of evaluations')
     ax1.set_ylabel('Height')
@@ -112,13 +121,13 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
 
     ax2.set_xscale('log') # log scale for x axis
     ax2.set_yscale('log') # log scale for y axis
-    ax2.plot(re_mean, label='mean')
-    ax2.plot(re_0, label='100%')
-    ax2.plot(re_25, label='75%')
-    ax2.plot(re_75, label='25%')
-    ax2.plot(re_100, label='0%')
-    ax2.fill_between(range(len(re_mean)), re_25, re_75, color='#5CA4FA', alpha=0.5)
-    ax2.fill_between(range(len(re_mean)), re_0, re_100, color='#5CF7FA', alpha=0.25)
+    ax2.plot(x_values, re_mean, label='mean')
+    ax2.plot(x_values, re_0, label='100%')
+    ax2.plot(x_values, re_25, label='75%')
+    ax2.plot(x_values, re_75, label='25%')
+    ax2.plot(x_values, re_100, label='0%')
+    ax2.fill_between(x_values, re_25, re_75, color='#5CA4FA', alpha=0.5)
+    ax2.fill_between(x_values, re_0, re_100, color='#5CF7FA', alpha=0.25)
     ax2.legend(loc='upper right')
     ax2.set_xlabel('Number of evaluations')
     ax2.set_ylabel('Distance to Ben Nevis')
@@ -133,6 +142,7 @@ def read_results(prefix):
     points_list = []
     function_values = []
     distance_values = []
+    downsampling = None
     for file in os.listdir('../result/'):
         if file.startswith(prefix) and file.endswith('.pickle'):
             print('Reading {}...'.format(file))
@@ -141,9 +151,16 @@ def read_results(prefix):
             points_list.extend(data.get('points_list', []))
             function_values.extend(data.get('function_values', []))
             distance_values.extend(data.get('distance_values', []))
+            if data.get('downsampling') is not None:
+                if downsampling is None:
+                    downsampling = data['downsampling']
+                else:
+                    assert downsampling == data['downsampling'], \
+                        "All downsampling values must be the same."
+
 
     points_list = pad_list(points_list)
     function_values = pad_list(function_values)
     distance_values = pad_list(distance_values)
         
-    return points_list or None, function_values or None, distance_values or None
+    return points_list or None, function_values or None, distance_values or None, downsampling or 1
