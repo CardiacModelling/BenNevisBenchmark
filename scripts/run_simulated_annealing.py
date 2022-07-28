@@ -20,10 +20,9 @@ def run_simulated_annealing():
     ret = dual_annealing(
         wrapper, 
         bounds=[(0, x_max), (0, y_max)],
-        maxiter=int(2e3),
-        initial_temp=1e5,
-        # restart_temp_ratio=1e-3,
-        # no_local_search=True,
+        maxiter=2000,
+        initial_temp=5e4,
+        restart_temp_ratio=1e-4,
     )
 
     x, y = ret.x
@@ -42,7 +41,7 @@ def run_simulated_annealing():
     print("Saving data...")
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     os.makedirs('../result', exist_ok=True)
-    pickle.dump(data, open(f"../result/simulated_annealing_{timestamp}.pickle", "wb"))
+    pickle.dump(data, open(f"../result/simulated_annealing_6_{timestamp}.pickle", "wb"))
 
 
 if __name__ == '__main__':
