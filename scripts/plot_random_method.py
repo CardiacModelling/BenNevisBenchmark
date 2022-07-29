@@ -85,6 +85,8 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
         for points in points_list:
             function_values.append([f(x, y) for x, y in points])
     
+    function_values = pad_list(function_values)
+    
     length = len(function_values[0])
     x_values = np.arange(downsampling - 1, length * downsampling, downsampling)
     
@@ -116,6 +118,7 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
         for points in points_list:
             distance_values.append([dist_to_ben(x, y) for x, y in points])
     
+    distance_values = pad_list(distance_values)
     print(f'Length of distance_values: {len(distance_values)}')
     re_mean, re_0, re_25, re_75, re_100 = calc(distance_values, 'min')
 
@@ -157,10 +160,5 @@ def read_results(prefix):
                 else:
                     assert downsampling == data['downsampling'], \
                         "All downsampling values must be the same."
-
-
-    points_list = pad_list(points_list)
-    function_values = pad_list(function_values)
-    distance_values = pad_list(distance_values)
         
     return points_list or None, function_values or None, distance_values or None, downsampling or 1
