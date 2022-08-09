@@ -66,6 +66,7 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
         re_mean = []
         re_0 = []
         re_25 = []
+        re_50 = []
         re_75 = []
         re_100 = []
         for x in temp:
@@ -73,10 +74,11 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
             sorted_x = np.sort(x)
             re_0.append(sorted_x[0])
             re_25.append(sorted_x[int(len(sorted_x) * 0.25)])
+            re_50.append(sorted_x[int(len(sorted_x) * 0.50)])
             re_75.append(sorted_x[int(len(sorted_x) * 0.75)])
             re_100.append(sorted_x[-1])
 
-        return re_mean, re_0, re_25, re_75, re_100
+        return re_mean, re_0, re_25, re_50, re_75, re_100
     
     # Function values
     if function_values is None:
@@ -91,7 +93,7 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
     x_values = np.arange(downsampling - 1, length * downsampling, downsampling)
     
     print(f'Length of function_values: {len(function_values)}')
-    re_mean, re_0, re_25, re_75, re_100 = calc(function_values, 'max')
+    re_mean, re_0, re_25, re_50, re_75, re_100 = calc(function_values, 'max')
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 10))
     fig.suptitle(f'Performance of {method_name}')
@@ -100,6 +102,7 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
     ax1.plot(x_values, re_mean, label='mean')
     ax1.plot(x_values, re_0, label='0%')
     ax1.plot(x_values, re_25, label='25%')
+    ax1.plot(x_values, re_50, label='50%')
     ax1.plot(x_values, re_75, label='75%')
     ax1.plot(x_values, re_100, label='100%')
     ax1.axhline(y=1344.9, color='r', linestyle='--', label='Ben Nevis')
@@ -120,13 +123,14 @@ def plot_random_method(points_list=None, function_values=None, distance_values=N
     
     distance_values = pad_list(distance_values)
     print(f'Length of distance_values: {len(distance_values)}')
-    re_mean, re_0, re_25, re_75, re_100 = calc(distance_values, 'min')
+    re_mean, re_0, re_25, re_50, re_75, re_100 = calc(distance_values, 'min')
 
     ax2.set_xscale('log') # log scale for x axis
     ax2.set_yscale('log') # log scale for y axis
     ax2.plot(x_values, re_mean, label='mean')
     ax2.plot(x_values, re_0, label='100%')
     ax2.plot(x_values, re_25, label='75%')
+    ax2.plot(x_values, re_50, label='50%')
     ax2.plot(x_values, re_75, label='25%')
     ax2.plot(x_values, re_100, label='0%')
     ax2.fill_between(x_values, re_25, re_75, color='#5CA4FA', alpha=0.5)
