@@ -13,16 +13,55 @@
 ### List of Algorithms
 
 - Grid search
+  - hyper-parameters
+    - grid side length
+
 - Random search
-- Bayesian Optimization
+  - hyper-parameters
+    - number of iterations
 
 - CMA-ES
+  - `pints` https://pints.readthedocs.io/en/stable/optimisers/cmaes.html
+    - The CMA Evolution Strategy: A Tutorial Nikolaus Hanse, arxiv https://arxiv.org/abs/1604.00772
+    - hyper-parameters
+    - `sigma0`
+      - `population_size`
+
 - DIRECT
+  - `nlopt` https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#direct-and-direct-l
+    - Jones, Donald R., and Joaquim R. R. A. Martins.  The DIRECT Algorithm: 25 Years Later.  *Journal of Global Optimization* 79, no. 3 (March 2021): 521 66. https://doi.org/10.1007/s10898-020-00952-6.
+    - (no hyper-parameter)
+
 - SHGO (used with local optimizers)
+  - `scipy.optimize.shgo`  https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.shgo.html
+    - Endres, Stefan C., Carl Sandrock, and Walter W. Focke.  A Simplicial Homology Algorithm for Lipschitz Optimisation.  *Journal of Global Optimization* 72, no. 2 (October 2018): 181 217. https://doi.org/10.1007/s10898-018-0645-y.
+    - hyper-parameters
+      - `n` number of sampling points used in the construction of the simplicial complex
+      - `iters` Number of iterations used in the construction of the simplicial complex
+      - `sampling_method`
+      - local minimizer
+
 - Simulated Annealing (can be used with local optimizers)
+  - `scipy.optimize.dual_annealing` https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.dual_annealing.html
+    - Xiang Y, Sun DY, Fan W, Gong XG. Generalized Simulated Annealing Algorithm and Its Application to the Thomson Model. Physics Letters A, 233, 216-220 (1997).
+    - hyper-parameters
+      - `maxiter`
+      - `initial_temp`
+      - `restart_temp_ratio`
+      - `visit`
+      - `accept`
+      - `no_local_search`
+
+  - hand coded version
+    - hyper-parameters
+      - `maxiter`
+      - `step_size`
+      - `initial_temp`
+      - `restart_temp_ratio`
+      - local optimizer
+
 - Restart strategies
-- (TODO) "Differential evolutionn
-- (TODO) TGO "topographical global optimization"
+- (TODO) Differential evolution
 
 
 - Local optimizers
@@ -41,6 +80,7 @@
   - simple idea: independent draws from uniform density from parameter space
   - proved to have equal or better performance for manual or grid search (because often only a small number of hyper-parameters affect the performance)
   - random search is unreliable for training some complex models
+  - Bergstra, James, and Yoshua Bengio.  Random Search for Hyper-Parameter Optimization,  n.d., 25.
 - Bayesian Optimization
   - uses Gaussian processes and an acquisition function to derive the maximum of the objective function. Updates itself when a new observation is made
   - common acquisition functions:
@@ -52,15 +92,32 @@
     - https://github.com/fmfn/BayesianOptimization
 
   - more complex than random search but likely to perform better
-
+  
+  - Hyperparameter Optimization for Machine Learning Models Based on Bayesian Optimization,  n.d. https://doi.org/10.11989/JEST.1674-862X.80904120.
+  
 
 ## Performance
 
-- termination criteria: terminates the algorithms when a maximum function evaluation number is reached OR we have reached >= a certain height (maybe 1340, sufficiently close to Ben Nevis). The algorithm may also terminate by itself, which we should try to prevent (but might not be able to)
-  - successful runs: we reach a certain height  (maybe 1317 for Ben Nevis and 1307 for Ben Nevis + Ben Macdui, see table in Appendix) before the algorithm terminates
-  - unsuccessful runs: the algorithm terminates because the maximum function evaluation number is reached or by itself before reaching the designated height
+1. https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#comparing-algorithms
 
-- when we actually run the algorithms we simply record all the function evaluations in an array and slice it to the point when the termination criteria are reached (as if it terminates even when it did not) and then we classify the run as successful or unsuccessful 
+	- > However, comparing algorithms requires a little bit of care because the  function-value/parameter tolerance tests are not all implemented in  exactly the same way for different algorithms. So, for example, the same fractional 10−4 tolerance on the function value might  produce a much more accurate minimum in one algorithm compared to  another, and matching them might require some experimentation with the  tolerances.
+	   >
+	   > Instead, a more fair and reliable way to compare two different  algorithms is to run one until the function value is converged to some  value *f*A, and then run the second algorithm with the minf_max [termination test](https://nlopt.readthedocs.io/en/latest/NLopt_Introduction#termination-conditions) set to minf_max=*f*A. That is, ask how long it takes for the two algorithms to reach the same function value.
+	   >
+	   > Better yet, run some algorithm for a really long time until the minimum *f*M is located to high precision. Then run the different algorithms you want to compare with the termination test: minf_max=*f*M+Δ*f*. That is, ask how long it takes for the different algorithms to obtain the minimum to within an absolute tolerance Δ*f*, for some Δ*f*. (This is *totally different* from using the ftol_abs termination test, because the latter uses only a crude estimate of the error in the function values, and moreover the  estimate varies between algorithms.)
+2. Bartz-Beielstein, Thomas, Carola Doerr, Daan van den Berg, Jakob Bossek, Sowmya Chandrasekaran, Tome Eftimov, Andreas Fischbach, et al.  Benchmarking in Optimization: Best Practice and Open Issues,  2020. https://doi.org/10.48550/ARXIV.2007.03488.
+3. Suganthan, P N, N Hansen, J J Liang, and K Deb.  Problem Definitions and Evaluation Criteria for the CEC 2005 Special Session on Real-Parameter Optimization,  n.d., 51.
+
+### Process
+
+- termination criteria: terminates the algorithms when a maximum function evaluation number is reached OR we have reached >= a certain height (maybe 1340, sufficiently close to Ben Nevis).
+  - `nlopt` (https://nlopt.readthedocs.io/en/latest/NLopt_Introduction/#termination-conditions use `stopeval`), `scipy`, and `pints` (https://pints.readthedocs.io/en/stable/optimisers/running.html use `set_threshold`) all support terminating the algorithms when reaching a particular function value
+  - the criterion which terminates each run should be recorded
+  - other parameters, including `xtol` or `ftol` should be consistent across algorithms (though different algorithms might take them differently, see [1] above)
+
+- classification of runs
+  - successful runs: we reach a certain height  (maybe 1317 for Ben Nevis and 1307 for Ben Nevis + Ben Macdui, see table in Appendix) before the algorithm terminates. We could also use distance to Ben Nevis
+  - unsuccessful runs: the algorithm terminates because the maximum function evaluation number is reached or by itself before reaching the designated height
 
 ### Metrics
 
