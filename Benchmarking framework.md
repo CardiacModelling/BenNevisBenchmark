@@ -112,9 +112,7 @@
 
 - termination criteria: terminates the algorithms when a maximum function evaluation number is reached OR we have reached >= a certain height (maybe 1340, sufficiently close to Ben Nevis).
   - `nlopt` (https://nlopt.readthedocs.io/en/latest/NLopt_Introduction/#termination-conditions use `stopeval`), `scipy`, and `pints` (https://pints.readthedocs.io/en/stable/optimisers/running.html use `set_threshold`) all support terminating the algorithms when reaching a particular function value
-  - the criterion which terminates each run should be recorded
-  - other parameters, including `xtol` or `ftol` should be consistent across algorithms (though different algorithms might take them differently, see [1] above)
-
+  - the criterion which terminates each run should be recorded. Try to make sure the algorithm terminates either due to reaching the designated height or reaching maximum function evaluations
 - classification of runs
   - successful runs: we reach a certain height  (maybe 1317 for Ben Nevis and 1307 for Ben Nevis + Ben Macdui, see table in Appendix) before the algorithm terminates. We could also use distance to Ben Nevis
   - unsuccessful runs: the algorithm terminates because the maximum function evaluation number is reached or by itself before reaching the designated height
