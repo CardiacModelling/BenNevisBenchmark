@@ -125,11 +125,18 @@
   - variant: the percentage of runs that are reach certain heights (e.g. 1000, 1100, 1200, 1300) at a a certain number of function evaluations
 - Successful rate
   - (# of successful runs according to the table above) / total runs
-
+- average function evaluations of successful runs
 - Success performance
   - mean (FEs for successful runs)*(# of total runs) / (# of successful runs)
+- penalized average runtime
+  - average function evaluations, while the failed runs are considered as $f$ times of maximum allowed function evaluations. $f$ is by convention taken as 2 and 10, and thus we have PAR2 and PAR10
 
-- the average runtime of successful runs
+- dominated hypervolume
+  - successful rate * (maximum allowed function evaluations - average function evaluations of successful runs)
+
+- expected running time
+  - average function evaluations of successful runs + (1 - successful rate) / (successful rate) * maximum allowed function evaluations
+
 
 
 ### Visualization
