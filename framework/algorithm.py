@@ -42,7 +42,7 @@ class Algorithm:
         self,
         method='random',
         iter_num=RS_ITER_NUM,
-        metric='hv',
+        measure='hv',
         mode='max',
     ):
         if method == 'random':
@@ -57,8 +57,8 @@ class Algorithm:
 
             for i, current_instance in enumerate(instances[:iter_num], 1):
                 print(f'Calculating instance {i} / {iter_num}')
-                current_value = current_instance.success_metrics()[metric]
-                print(f'{metric} = {current_value}')
+                current_value = current_instance.success_measures()[measure]
+                print(f'{measure} = {current_value}')
                 if (mode == 'max' and current_value >= best_value)\
                     or (mode == 'min' and current_value <= best_value):
                     best_value = current_value
@@ -72,25 +72,25 @@ class Algorithm:
             raise NotImplementedError 
     
 
-    def plot_instances(self, x_metric='avg_success_eval', y_metric='failure_rate'):
+    def plot_instances(self, x_measure='avg_success_eval', y_measure='failure_rate'):
         instances = list(self.instances)
         xs = []
         ys = []
 
         for instance in instances:
-            metrics = instance.success_metrics()
-            xs.append(metrics[x_metric])
-            ys.append(metrics[y_metric])
+            measures = instance.success_measures()
+            xs.append(measures[x_measure])
+            ys.append(measures[y_measure])
         
         plt.scatter(xs, ys)
-        plt.xlabel(x_metric)
-        plt.ylabel(y_metric)
-        plt.title(f'Performance metrics of {self.name} across {len(instances)} instances')
+        plt.xlabel(x_measure)
+        plt.ylabel(y_measure)
+        plt.title(f'Performance measures of {self.name} across {len(instances)} instances')
         plt.show()
     
     def plot_all(self):
         instances = list(self.instances)
-        df = pd.DataFrame([instance.success_metrics() for instance in instances])
+        df = pd.DataFrame([instance.success_measures() for instance in instances])
         df.drop(['failure_rate', 'success_cnt'], axis=1, inplace=True)
         seaborn.pairplot(df)
         plt.show()

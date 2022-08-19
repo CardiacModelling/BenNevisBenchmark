@@ -118,7 +118,7 @@
   - successful runs: we reach a certain height  (maybe 1317 for Ben Nevis and 1307 for Ben Nevis + Ben Macdui, see table in Appendix) before the algorithm terminates. We could also use distance to Ben Nevis
   - unsuccessful runs: the algorithm terminates because the maximum function evaluation number is reached or by itself before reaching the designated height
 
-### Metrics
+### Measures
 
 - Maximum height reached at a certain number of function evaluations
   - data are aggregated (i.e. 0, 25, 50, 75, 100 percentiles and mean and std) across multiple runs
@@ -145,7 +145,7 @@
   - showing maximum height reached at a certain number of function evaluations (as above)
 
 - Boxplots and histograms
-  - showing the distribution of performance metrics across different runs 
+  - showing the distribution of performance measures across different runs 
 
 - Plots for showing a single run
   - 2-D scatter plot and trajectory plot

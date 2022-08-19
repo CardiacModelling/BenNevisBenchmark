@@ -51,19 +51,19 @@ if __name__ == '__main__':
         version=2
     )
     algo.tune_params(
-        # metric='par2',
+        # measure='par2',
         # mode='min',
-        metric='success_rate',
+        measure='success_rate',
         mode='max'
     )
     algo_instance = algo.best_instance
-    print(algo_instance.success_metrics())
+    print(algo_instance.success_measures())
     algo_instance.print()
     # algo_instance.plot_convergence_graph()
     algo.plot_all()
     # algo.plot_instances(
-    #     x_metric='success_rate',
-    #     y_metric='avg_height'
+    #     x_measure='success_rate',
+    #     y_measure='avg_height'
     # )
     # plt.show()
 

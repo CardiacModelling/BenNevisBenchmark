@@ -47,7 +47,7 @@ class AlgorithmInstance:
         
         
     @cache
-    def success_metrics(self,
+    def success_measures(self,
         max_fes=MAX_FES,
         success_height=SUCCESS_HEIGHT,
         run_num=RUN_NUM

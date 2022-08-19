@@ -117,7 +117,7 @@ def plot_instances(instances):
     performances = []
 
     for instance in instances:
-        rate, performance = instance.success_metrics()
+        rate, performance = instance.success_measures()
         rates.append(rate)
         performances.append(performance)
     
