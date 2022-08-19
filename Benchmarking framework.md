@@ -100,13 +100,15 @@
 
 1. https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#comparing-algorithms
 
-	- > However, comparing algorithms requires a little bit of care because the  function-value/parameter tolerance tests are not all implemented in  exactly the same way for different algorithms. So, for example, the same fractional 10−4 tolerance on the function value might  produce a much more accurate minimum in one algorithm compared to  another, and matching them might require some experimentation with the  tolerances.
-	   >
-	   > Instead, a more fair and reliable way to compare two different  algorithms is to run one until the function value is converged to some  value *f*A, and then run the second algorithm with the minf_max [termination test](https://nlopt.readthedocs.io/en/latest/NLopt_Introduction#termination-conditions) set to minf_max=*f*A. That is, ask how long it takes for the two algorithms to reach the same function value.
-	   >
-	   > Better yet, run some algorithm for a really long time until the minimum *f*M is located to high precision. Then run the different algorithms you want to compare with the termination test: minf_max=*f*M+Δ*f*. That is, ask how long it takes for the different algorithms to obtain the minimum to within an absolute tolerance Δ*f*, for some Δ*f*. (This is *totally different* from using the ftol_abs termination test, because the latter uses only a crude estimate of the error in the function values, and moreover the  estimate varies between algorithms.)
+  - > However, comparing algorithms requires a little bit of care because the  function-value/parameter tolerance tests are not all implemented in  exactly the same way for different algorithms. So, for example, the same fractional 10−4 tolerance on the function value might  produce a much more accurate minimum in one algorithm compared to  another, and matching them might require some experimentation with the  tolerances.
+     >
+     > Instead, a more fair and reliable way to compare two different  algorithms is to run one until the function value is converged to some  value *f*A, and then run the second algorithm with the minf_max [termination test](https://nlopt.readthedocs.io/en/latest/NLopt_Introduction#termination-conditions) set to minf_max=*f*A. That is, ask how long it takes for the two algorithms to reach the same function value.
+     >
+     > Better yet, run some algorithm for a really long time until the minimum *f*M is located to high precision. Then run the different algorithms you want to compare with the termination test: minf_max=*f*M+Δ*f*. That is, ask how long it takes for the different algorithms to obtain the minimum to within an absolute tolerance Δ*f*, for some Δ*f*. (This is *totally different* from using the ftol_abs termination test, because the latter uses only a crude estimate of the error in the function values, and moreover the  estimate varies between algorithms.)
 2. Bartz-Beielstein, Thomas, Carola Doerr, Daan van den Berg, Jakob Bossek, Sowmya Chandrasekaran, Tome Eftimov, Andreas Fischbach, et al.  Benchmarking in Optimization: Best Practice and Open Issues,  2020. https://doi.org/10.48550/ARXIV.2007.03488.
 3. Suganthan, P N, N Hansen, J J Liang, and K Deb.  Problem Definitions and Evaluation Criteria for the CEC 2005 Special Session on Real-Parameter Optimization,  n.d., 51.
+4. Bossek, Jakob, Pascal Kerschke, and Heike Trautmann.  A Multi-Objective Perspective on Performance Assessment and Automated Selection of Single-Objective Optimization Algorithms.  *Applied Soft Computing* 88 (March 2020): 105901. https://doi.org/10.1016/j.asoc.2019.105901.
+5. Hansen, Nikolaus, Anne Auger, Steffen Finck, and Raymond Ros.  Real-Parameter Black-Box Optimization Benchmarking 2009: Experimental Setup,  n.d., 20.
 
 ### Process
 
@@ -126,18 +128,17 @@
 - Successful rate
   - (# of successful runs according to the table above) / total runs
 - average function evaluations of successful runs
-- Success performance
+- Success performance [3]
   - mean (FEs for successful runs)*(# of total runs) / (# of successful runs)
-- penalized average runtime
+- penalized average runtime [4]
   - average function evaluations, while the failed runs are considered as $f$ times of maximum allowed function evaluations. $f$ is by convention taken as 2 and 10, and thus we have PAR2 and PAR10
 
-- dominated hypervolume
+- dominated hypervolume [4]
   - successful rate * (maximum allowed function evaluations - average function evaluations of successful runs)
-
-- expected running time
+  - is correlated to par according to [4]
+  
+- expected running time [5]
   - average function evaluations of successful runs + (1 - successful rate) / (successful rate) * maximum allowed function evaluations
-
-
 
 ### Visualization
 
