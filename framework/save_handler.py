@@ -30,6 +30,9 @@ class SaveHandler:
     
     def load_results(self, instance_hash):
         instance_dir = os.path.join(self.path, str(instance_hash))
+        if not os.path.exists(instance_dir):
+            return set()
+        
         results = set()
         for result_path in os.listdir(instance_dir):
             if result_path == 'instance':
@@ -53,7 +56,6 @@ class SaveHandler:
             save_handler=self, 
         )
 
-        instance.results = self.load_results(instance_hash)
         return instance
     
 

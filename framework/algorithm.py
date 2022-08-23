@@ -28,6 +28,9 @@ class Algorithm:
     def __call__(self, **params) -> Result:
         return self.func(**params)
     
+    def generate_instance(self, instance_hash=None, **params):
+        return AlgorithmInstance(self, params, self.save_handler, hash=instance_hash)
+    
     def generate_random_instance(self):
         params = {}
         for param, values in self.param_space.items():

@@ -21,9 +21,11 @@ class AlgorithmInstance:
             self.hash = time.time()
         else:
             self.hash = hash
-        self.results = set()
 
         self.save_handler = save_handler
+
+        self.results = set()
+        self.load_results()
 
     def __eq__(self, other) -> bool:
         return self.hash == other.hash
@@ -45,7 +47,10 @@ class AlgorithmInstance:
             self.results.add(result)
             self.save_handler.add_result(self, result)
         
-        
+    def load_results(self):
+        results = self.save_handler.load_results(self.hash)
+        self.results.update(results)
+    
     @cache
     def success_measures(self,
         max_fes=MAX_FES,
@@ -63,7 +68,7 @@ class AlgorithmInstance:
             if is_success:
                 success_cnt += 1
                 success_eval_cnt += eval_cnt
-            height_sum += result.ret_heigt
+            height_sum += result.ret_height
 
         
         success_rate = success_cnt / run_num
@@ -153,7 +158,7 @@ class AlgorithmInstance:
         print(f'Length of function_values: {len(function_values)}')
         re_mean, re_0, re_25, re_50, re_75, re_100 = calc(function_values, 'max')
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 10))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
         fig.suptitle(f'Performance of {self.algorithm.name}')
 
         ax1.set_xscale('log') # log scale for x axis
