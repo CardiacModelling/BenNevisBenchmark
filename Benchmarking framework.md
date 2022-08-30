@@ -12,7 +12,7 @@
 
 ### Global Optimization: Two Phases
 
-![](file:///home/eric/Pictures/Screenshot_20220830_112905.png)
+![](./img/Screenshot_20220830_112905.png)
 
 - Phase I: global phase
 
