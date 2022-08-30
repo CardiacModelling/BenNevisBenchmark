@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 f = nevis.linear_interpolant()
 ben_x, ben_y = nevis.ben().grid
-def dist_to_ben(x, y):
+def _dist_to_ben(x, y):
     return np.linalg.norm(np.array([x, y]) - np.array([ben_x, ben_y]))
 x_max, y_max = nevis.dimensions()
 
@@ -43,7 +43,7 @@ class Result:
         return np.array([f(*p) for p in self.points])
     
     def get_distances(self):
-        return np.array([dist_to_ben(*p) for p in self.points])
+        return np.array([_dist_to_ben(*p) for p in self.points])
     
     def success_eval(self, max_fes=MAX_FES, success_height=SUCCESS_HEIGHT):
         for i, h in enumerate(self.heights, 1):
@@ -54,6 +54,11 @@ class Result:
                 return True, i
         
         return False, max_fes
+    
+    @property
+    def ret_distance(self):
+        x, y = self.ret_point
+        return _dist_to_ben(x, y)
     
     def print(self):
         x, y = self.ret_point

@@ -10,28 +10,51 @@
 
 ## Algorithms
 
+### Global Optimization: Two Phases
+
+![](file:///home/eric/Pictures/Screenshot_20220830_112905.png)
+
+- Phase I: global phase
+
+  - exploring the feasible region
+  - makes use of uniform random sampling or quasirandom sequences (low-discrepancy, e.g. Sobol sequence)
+
+- Phase II: local phase
+
+  - main computational burden 
+
+  - determined by the selection of $S^*$
+
+    - pure random search: $S^*$ is empty
+    - best start: $S^*$ is the set of point that has a function value strictly lower than the best so far has been observed
+    - multistart: $S^*=S_k$ e.g. starting a local search from every sampling point
+    - clustering: concentrating the sample by discarding a fixed fraction of the points with highest function values, which transforms the sampling to a non-uniform one. Clustering techniques are then employed to identify subsets of the sample with a higher-than-average concentration of points
+    - topological search: $S^*$ is the set of points whose function value is lower than that of its $m$ nearest neighbors
+      - SHGO is developed to improve topological search (the latter does not fully utilize information provided by function evaluations)
+    - multilevel single-linkage (MLSL) and single linkage (SL)
+
+    > The basic idea of this method (MLSL), which was analyzed in [8], is that, instead of building clusters with prescribed shape (e. g., ellipsoidal), points are clustered by means of a distance criterion. In particular a point is clustered to another in the sample if this latter is near enough and has a better function value. Local searches are started only from unclustered points.
+
+Floudas, Christodoulos A., and P. M. Pardalos, eds. *Encyclopedia of Optimization*. 2nd ed. Springer Reference. New York: Springer, 2009.
+
 ### List of Algorithms
 
 - Grid search
   - hyper-parameters
     - grid side length
-
 - Random search
   - hyper-parameters
     - number of iterations
-
 - CMA-ES
   - `pints` https://pints.readthedocs.io/en/stable/optimisers/cmaes.html
     - The CMA Evolution Strategy: A Tutorial Nikolaus Hanse, arxiv https://arxiv.org/abs/1604.00772
     - hyper-parameters
       - `sigma0`
       - `population_size`
-
 - DIRECT
   - `nlopt` https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#direct-and-direct-l
     - Jones, Donald R., and Joaquim R. R. A. Martins.  The DIRECT Algorithm: 25 Years Later.  *Journal of Global Optimization* 79, no. 3 (March 2021): 521 66. https://doi.org/10.1007/s10898-020-00952-6.
     - (no hyper-parameter)
-
 - SHGO (used with local optimizers)
   - `scipy.optimize.shgo`  https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.shgo.html
     - Endres, Stefan C., Carl Sandrock, and Walter W. Focke.  A Simplicial Homology Algorithm for Lipschitz Optimisation.  *Journal of Global Optimization* 72, no. 2 (October 2018): 181 217. https://doi.org/10.1007/s10898-018-0645-y.
@@ -39,8 +62,8 @@
       - `n` number of sampling points used in the construction of the simplicial complex
       - `iters` Number of iterations used in the construction of the simplicial complex
       - `sampling_method`
+        - `sobol` is a quasi-random low-discrepancy sequence (designed to cover the space more evenly). It is deterministic but can be scrambled (randomized)
       - local minimizer
-
 - Simulated Annealing (can be used with local optimizers)
   - `scipy.optimize.dual_annealing` https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.dual_annealing.html
     - Xiang Y, Sun DY, Fan W, Gong XG. Generalized Simulated Annealing Algorithm and Its Application to the Thomson Model. Physics Letters A, 233, 216-220 (1997).
@@ -59,7 +82,6 @@
       - `initial_temp`
       - `restart_temp_ratio`
       - local optimizer
-
 - Restart strategies
 - (TODO) Differential evolution
 

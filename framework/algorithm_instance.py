@@ -1,11 +1,22 @@
 from functools import cache
 from pprint import pprint
+import nevis
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib.patches import Patch
 from .config import MAX_FES, SUCCESS_HEIGHT, RUN_NUM
 import time
 from tqdm import tqdm
 
+def pad_list(ls):
+    if not ls:
+        return []
+    length = max(len(l) for l in ls)
+    return [
+        np.append(l, [l[-1]] * (length - len(l)))
+        for l in ls
+    ]
 
 class AlgorithmInstance:
     def __init__(self, algorithm, params, save_handler, hash=None):
@@ -98,6 +109,39 @@ class AlgorithmInstance:
             print(f'{len(result.points)}')
             result.print()
             print()
+    
+    def plot_histogram(self):
+        heights = []
+        distances = []
+        evals = []
+
+        for result in self.results:
+            heights.append(result.ret_height)
+            distances.append(result.ret_distance)
+            evals.append(len(result.points))
+
+        fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+        
+        axs[0, 0].hist(heights)
+        axs[0, 1].hist(distances)
+        axs[1, 0].hist(evals)
+        plt.show()
+    
+    def plot_ret_points(self):
+        ret_points = []
+
+        for result in self.results:
+            ret_points.append(result.ret_point)
+        
+        nevis.plot(
+            labels={
+                'Ben Neivs': nevis.ben(),
+                'Ben Macdui': nevis.Hill.by_rank(2).coords,
+            },
+            points=np.array(ret_points)
+        )
+
+        plt.show()
 
 
     def plot_convergence_graph(self, downsampling=1):
@@ -113,14 +157,7 @@ class AlgorithmInstance:
         -------
         fig, (ax1, ax2) : tuple of matplotlib.pyplot.Figure and (ax1, ax2)
         """
-        def pad_list(ls):
-            if not ls:
-                return []
-            length = max(len(l) for l in ls)
-            return [
-                np.append(l, [l[-1]] * (length - len(l)))
-                for l in ls
-            ]
+
 
         def calc(values_list, method):
             random_results = []
@@ -198,3 +235,94 @@ class AlgorithmInstance:
         
 
         return fig, (ax1, ax2)
+
+
+    def plot_convergence_graph_variant(self):
+        
+        function_values = pad_list([result.heights for result in self.results])
+
+        height_bins = [1000, 1100, 1150, 1215, 1235, 1297, 1310, 1340, 1350]
+        height_labels = [
+            '',
+            '',
+            '~ top 50 Munros',
+            '~ top 25 Monros',
+            'Ben Nevis Massif (top 9 Munros)',
+            'Caringorm Plateau (top 6 Munros)',
+            'Ben Macdui (2nd highest Munro)',
+            'Very close to Ben Nevis',
+            'Ben Nevis (highest Munro)',
+        ]
+
+        
+        def get_cat(h):
+            for i, x in enumerate(height_bins):
+                if h <= x:
+                    return i
+        
+        random_results = []
+        for values in function_values:
+            prefix = np.maximum.accumulate(values)
+            random_results.append(prefix)
+        
+        temp = np.array(random_results).T
+
+        group_cnts = []
+
+        for x in temp:
+            group_cnt = [0] * len(height_bins)
+            for h in x:
+                group_cnt[get_cat(h)] += 1
+            
+            for i in range(len(group_cnt) - 1):
+                group_cnt[i + 1] += group_cnt[i]
+            
+            group_cnts.append(group_cnt)
+        
+        group_cnts = np.array(group_cnts).T
+
+
+        # plt.xscale('log')
+        legend_elements = []
+
+        def index_to_color(i):
+            return plt.cm.tab20c(1 - (i + 1) / (len(height_bins)))
+        
+        fig, ax = plt.subplots(1, 1)
+
+        for i, height in enumerate(height_bins):
+            cnts = group_cnts[i]
+
+
+            ax.fill_between(
+                range(len(cnts)), 
+                group_cnts[i - 1] if i > 0 else [0] * len(cnts), 
+                group_cnts[i], 
+                color=index_to_color(i)
+            )
+
+            low = height_bins[i - 1] if i > 0 else 0
+            high = height
+
+            legend_elements.append(
+                Patch(
+                    color=index_to_color(i),
+                    label=f'{low}m - {high}m {height_labels[i]}'
+                )
+            )
+        
+        fig.legend(
+            handles=legend_elements[::-1],
+            # bbox_to_anchor=(1.04, 0), 
+            loc=7, 
+            # borderaxespad=0
+        )
+        # plt.tight_layout(rect=[0, 0, 0.75, 1])
+        fig.suptitle(
+            'Number of runs reaching a certain height at each function evaluation for {} runs of {}'.format(
+                len(self.results),
+                self.algorithm.name
+            ))
+        fig.tight_layout()
+        fig.subplots_adjust(right=0.75)
+        plt.show()
