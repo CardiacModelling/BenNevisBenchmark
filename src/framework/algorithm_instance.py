@@ -3,13 +3,14 @@ from pprint import pprint
 import nevis
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 from matplotlib.patches import Patch
 from .config import MAX_FES, SUCCESS_HEIGHT, RUN_NUM
 import time
 from tqdm import tqdm
 
 def pad_list(ls):
+    """Making each list of the input list of lists have the same length, by padding
+    with the last element of each list."""
     if not ls:
         return []
     length = max(len(l) for l in ls)
@@ -44,17 +45,19 @@ class AlgorithmInstance:
     def __hash__(self):
         return int(self.hash * 1000000)
 
-    def run(self, run_num):
+
+    def run(self, run_num=RUN_NUM):
+        """Run this instance."""
         self.save_handler.save_instance(self)
 
         if len(self.results) >= run_num:
             return
+        
         print(f'Running instance {self.hash}')
         pprint(self.info)
         remain_run_times = run_num - len(self.results)
         for _ in tqdm(range(remain_run_times)):
             result = self.algorithm(**self.params)
-            # result.print()
             self.results.add(result)
             self.save_handler.add_result(self, result)
         
@@ -63,47 +66,68 @@ class AlgorithmInstance:
         self.results.update(results)
     
     @cache
-    def success_measures(self,
+    def performance_measures(
+        self,
         max_fes=MAX_FES,
         success_height=SUCCESS_HEIGHT,
-        run_num=RUN_NUM
     ):
-        self.run(run_num)
-        results = list(self.results)[:run_num]
+        """Return all the performance measures of the instance."""
+        self.run()
+        results = list(self.results)
+        run_num = len(results)
         
         success_cnt = 0
         success_eval_cnt = 0
+        failed_cnt = 0
+        failed_eval_cnt = 0
         height_sum = 0
         for result in results:
             is_success, eval_cnt = result.success_eval(max_fes, success_height)
             if is_success:
                 success_cnt += 1
                 success_eval_cnt += eval_cnt
+            else:
+                failed_cnt += 1
+                failed_eval_cnt += eval_cnt
+
             height_sum += result.ret_height
 
+        if success_cnt == 0:
+            return {
+                'success_rate': 0,
+                'failure_rate': 1,
+                'success_cnt': 0,
+                'avg_success_eval': float('inf'),
+                'hv': 0,
+                'par2': float('inf'),
+                'par10':  float('inf'),
+                'avg_height': 0,
+                'ert': float('inf'),
+                'sp': float('inf'),
+            }
         
         success_rate = success_cnt / run_num
-        performance = float('inf') if success_cnt == 0\
-            else success_eval_cnt / success_cnt * run_num / success_cnt
-        if success_cnt == 0:
-            avg_success_eval = max_fes
-        else:
-            avg_success_eval = success_eval_cnt / success_cnt
+        avg_success_eval = success_eval_cnt / success_cnt
+        avg_failed_eval = failed_eval_cnt / failed_cnt if failed_cnt != 0 else 0
         return {
             'success_rate': success_rate,
             'failure_rate': 1 - success_rate,
             'success_cnt': success_cnt,
             'avg_success_eval': avg_success_eval,
             'hv': (max_fes - avg_success_eval) * success_rate,
-            'performance': performance,
-            'par2': ((run_num - success_cnt) * 2 * max_fes + success_eval_cnt) / run_num,
-            'par10':  ((run_num - success_cnt) * 10 * max_fes + success_eval_cnt) / run_num,
+            'par2': (failed_cnt * 2 * max_fes + success_eval_cnt) / run_num,
+            'par10':  (failed_cnt * 10 * max_fes + success_eval_cnt) / run_num,
             'avg_height': height_sum / run_num,
-            'ert': avg_success_eval + (1 - success_rate) / success_rate * max_fes if success_cnt != 0 else float('inf')
+            'ert': avg_success_eval + (1 - success_rate) / success_rate * avg_failed_eval,
+            'sp': avg_success_eval / success_rate,
         }
 
     def print(self):
+        pprint(self.hash)
         pprint(self.info)
+        pprint(self.performance_measures())
+    
+    def print_results(self):
         for i, result in enumerate(self.results):
             print(f'=== Result #{i} ===')
             print(f'{len(result.points)}')
@@ -120,11 +144,12 @@ class AlgorithmInstance:
             distances.append(result.ret_distance)
             evals.append(len(result.points))
 
-        fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+        fig, axs = plt.subplots(1, 3, figsize=(18, 10))
         
-        axs[0, 0].hist(heights)
-        axs[0, 1].hist(distances)
-        axs[1, 0].hist(evals)
+        axs[0].hist(heights)
+        axs[1].hist(distances)
+        axs[2].hist(evals)
+        fig.suptitle(f'Histogram of returned heights, distances to Ben Nevis, and numbers of function evals for {len(self.results)} runs of {self.algorithm.name}')
         plt.show()
     
     def plot_ret_points(self):
@@ -146,16 +171,12 @@ class AlgorithmInstance:
 
     def plot_convergence_graph(self, downsampling=1):
         """
-        Plot random method results.
+        Plot a convergence graph across all instances.
 
         Parameters
         ----------
         downsampling : int
             Downsampling factor.
-        
-        Returns
-        -------
-        fig, (ax1, ax2) : tuple of matplotlib.pyplot.Figure and (ax1, ax2)
         """
 
 
@@ -192,7 +213,7 @@ class AlgorithmInstance:
         length = len(function_values[0])
         x_values = np.arange(downsampling - 1, length * downsampling, downsampling)
         
-        print(f'Length of function_values: {len(function_values)}')
+        # print(f'Length of function_values: {len(function_values)}')
         re_mean, re_0, re_25, re_50, re_75, re_100 = calc(function_values, 'max')
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
@@ -215,7 +236,7 @@ class AlgorithmInstance:
         
         
         distance_values = pad_list(distance_values)
-        print(f'Length of distance_values: {len(distance_values)}')
+        # print(f'Length of distance_values: {len(distance_values)}')
         re_mean, re_0, re_25, re_50, re_75, re_100 = calc(distance_values, 'min')
 
         ax2.set_xscale('log') # log scale for x axis
@@ -234,11 +255,11 @@ class AlgorithmInstance:
         ax2.set_ylim(10, 2e6)
         
         plt.show()
-        return fig, (ax1, ax2)
 
 
-    def plot_convergence_graph_variant(self):
-        
+    def plot_stacked_graph(self):
+        """Plot a stacked graph for all instances."""
+
         function_values = pad_list([result.heights for result in self.results])
 
         height_bins = [1000, 1100, 1150, 1215, 1235, 1297, 1310, 1340, 1350]
@@ -313,11 +334,9 @@ class AlgorithmInstance:
         
         fig.legend(
             handles=legend_elements[::-1],
-            # bbox_to_anchor=(1.04, 0), 
             loc=7, 
-            # borderaxespad=0
         )
-        # plt.tight_layout(rect=[0, 0, 0.75, 1])
+
         fig.suptitle(
             'Number of runs reaching a certain height at each function evaluation for {} runs of {}'.format(
                 len(self.results),

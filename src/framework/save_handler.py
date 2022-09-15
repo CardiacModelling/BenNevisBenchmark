@@ -48,9 +48,7 @@ class SaveHandler:
         instance_path = os.path.join(instance_dir, 'instance')
         with open(instance_path, 'rb') as file:
             instance_dict = pickle.load(file)
-        
-        # print(instance_dict)
-        
+                
         instance = AlgorithmInstance(
             **instance_dict, 
             save_handler=self, 
