@@ -95,6 +95,7 @@ class AlgorithmInstance:
         self,
         max_fes=MAX_FES,
         success_height=SUCCESS_HEIGHT,
+        run=True,
     ):
         """
         Return all the performance measures of the instance.
@@ -105,6 +106,8 @@ class AlgorithmInstance:
             The maximum number of function evaluations.
         success_height : float
             The height threshold for a successful run.
+        run : bool
+            Whether to run the instance first if there are not enough results saved.
 
         Returns
         -------
@@ -122,7 +125,8 @@ class AlgorithmInstance:
             - 'ert': The expected runtime.
             - 'sp': The success performance.
         """
-        self.run()
+        if run:
+            self.run()
         results = list(self.results)
         run_num = len(results)
         
