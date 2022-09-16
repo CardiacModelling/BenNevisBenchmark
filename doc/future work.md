@@ -1,6 +1,6 @@
 # Notes for future work
 
-- further adjustments to the plots
+- further adjustments to the plots to make them more suitable for presentation, e.g. better font size, figure size, and more lables or explanations
 - run the algorithms with a larger number of iterations so that the measures really "converge"
 - more algorithms to consider, including
   - topological search
