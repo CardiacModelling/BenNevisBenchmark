@@ -12,6 +12,22 @@ import seaborn
 
 class Algorithm:
     def __init__(self, name, func, param_space, version=1):
+        """
+        Class for an algorithm.
+
+        Parameters
+        ----------
+        name : string
+            The name of the algorithm.
+        func : function
+            The function that runs the algorithm. This function takes all the hyper-paramters
+            used by the algorithm as keyword arguments, and returns a ``Result`` object.
+        param_space : dict
+            A dictionary mapping the names of hyper-paramters to the list of values they can take.
+        version : int
+            The version of the algorithm. This is used to distinguish between different versions
+            of the same algorithm so that they are saved in different folders.
+        """
         self.name = name
         self.func = func
         self.param_space = param_space
@@ -30,15 +46,33 @@ class Algorithm:
         return self.func(**params)
     
     def generate_instance(self, instance_hash=None, **params):
+        """
+        Generate an ``AlgorithmInstance``.
+
+        Parameters
+        ----------
+        instance_hash : int
+            The hash of the instance. If not provided, a hash will be generated based on the
+            time.
+        **params
+            Hyper-paramters of this instance.
+        """
         return AlgorithmInstance(self, params, self.save_handler, hash=instance_hash)
     
     def generate_random_instance(self):
+        """
+        Generate a random instance of this algorithm by drawing from the hyper-parameter
+        space.
+        """
         params = {}
         for param, values in self.param_space.items():
             params[param] = np.random.choice(values)
         return AlgorithmInstance(self, params, self.save_handler)
     
     def load_instances(self):
+        """
+        Load all instances from the save folder.
+        """
         instances = self.save_handler.get_all_instances()
         self.instances.update(instances)
     

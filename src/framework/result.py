@@ -24,35 +24,52 @@ class Result:
         trajectory=[],
         ret_obj=None
     ):
-        # returned point, (x, y)
+        """
+        Class for the result of an optimization run.
+
+        Parameters
+        ----------
+        ret_point : tuple
+            The best point (x, y) returned.
+        ret_height : float
+            The height returned.
+        points : array of tuple
+            All points visited during the run.
+        message : string
+            A message describes why the algorithm terminated.
+        heights : array of float
+            The corresponding function values of ``points``.
+        distances : array of float
+            The corresponding distances to Ben Neivs of ``points``.
+        trajectory : array of tuple
+            Trajectory used in plots.
+        ret_object : Any
+            Result object returned by the optimization process, or any object
+            containing potentially useful information.
+        """
         self.ret_point = ret_point
-        # returned height
         self.ret_height = ret_height
-        # all points at which the function was evaluated
         self.points = np.array(points)
-        # corresponding function values
         if heights is None:
             self.heights = self.get_heights()
         else:
             self.heights = heights
-        # corresponding distances to Ben Neivs
         if distances is None:
             self.distances = self.get_distances()
         else:
             self.distances = distances
-        # optional trajectory, used in plots
         self.trajectory = np.array(trajectory)
-        # a message describes why the algorithm terminated
         self.message = message
-        # optional, result object returned by the optimization process
         self.ret_obj = ret_obj
         # used as an identifier
         self.time = time.time()
 
     def get_heights(self):
+        """Calcuate heights for all visited points."""
         return np.array([f(*p) for p in self.points])
     
     def get_distances(self):
+        """Calcuate distances to Ben Nevis for all visited points."""
         return np.array([_dist_to_ben(*p) for p in self.points])
     
     def success_eval(self, max_fes=MAX_FES, success_height=SUCCESS_HEIGHT):
@@ -69,10 +86,14 @@ class Result:
     
     @property
     def ret_distance(self):
+        """The distance of result point to Ben Nevis."""
         x, y = self.ret_point
         return _dist_to_ben(x, y)
     
     def print(self):
+        """Print a summary of the result."""
+        print(self.time)
+        print(f'Number of function evals: {len(self.points)}')
         x, y = self.ret_point
         nevis.print_result(x, y, self.ret_height)
     
@@ -97,6 +118,7 @@ class Result:
         return labels
     
     def plot_global(self):
+        """Make a 2d global plot of the run process."""
         nevis.plot(
             labels=self._plot_labels,
             points=np.array(self.points),
@@ -104,6 +126,16 @@ class Result:
         plt.show()
     
     def plot_partial(self, side_length=40e3, zoom=1):
+        """
+        Make a 2d partial plot of the run process.]
+
+        Parameters
+        ----------
+        side_length : float
+            The side length of the partial plot, in metres.
+        zoom : float
+            The ratio of zooming used in the plot.
+        """
         b = side_length / 2
         x, y = self.ret_point
         boundaries = [x - b, x + b, y - b, y + b]
@@ -117,6 +149,14 @@ class Result:
         
 
     def generate_kml(self, path):
+        """
+        Generate a kml file of this run.
+
+        Parameters
+        ----------
+        path : string
+            Path of the generated kml file.
+        """
         nevis.generate_kml(
             path, 
             labels=self._plot_labels,

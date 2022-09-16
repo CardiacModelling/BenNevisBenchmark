@@ -21,6 +21,22 @@ def pad_list(ls):
 
 class AlgorithmInstance:
     def __init__(self, algorithm, params, save_handler, hash=None):
+        """
+        Class for an algorithm instance. All results of this instance previously
+        saved will be loaded automatically.
+
+        Parameters
+        ----------
+        algorithm : Algorithm
+            The algorithm this instance belongs to.
+        params : dict
+            The hyper-paramters of this instance.
+        save_handler : SaveHandler
+            The save handler of the algorithm.
+        hash : int
+            The hash of this instance. If not provided, a hash will be generated based on the
+            time.
+        """
         self.algorithm = algorithm
         self.params: dict = params
 
@@ -47,7 +63,15 @@ class AlgorithmInstance:
 
 
     def run(self, run_num=RUN_NUM):
-        """Run this instance."""
+        """
+        Run this instance and save all results. Notice that this function will not
+        run the instance if there are already enough results saved for this instance.
+        
+        Parameters
+        ----------
+        run_num : int
+            The number of times to run this instance.
+        """
         self.save_handler.save_instance(self)
 
         if len(self.results) >= run_num:
@@ -62,6 +86,7 @@ class AlgorithmInstance:
             self.save_handler.add_result(self, result)
         
     def load_results(self):
+        """Load all results saved for this instance."""
         results = self.save_handler.load_results(self.hash)
         self.results.update(results)
     
@@ -71,7 +96,32 @@ class AlgorithmInstance:
         max_fes=MAX_FES,
         success_height=SUCCESS_HEIGHT,
     ):
-        """Return all the performance measures of the instance."""
+        """
+        Return all the performance measures of the instance.
+
+        Parameters
+        ----------
+        max_fes : int
+            The maximum number of function evaluations.
+        success_height : float
+            The height threshold for a successful run.
+
+        Returns
+        -------
+        dict
+            A dictionary of performance measures. Keys are the names of the measures.
+            The keys include:
+            - 'success_rate': The success rate of the instance.
+            - 'failure_rate': The failure rate of the instance.
+            - 'success_cnt': The number of successful runs.
+            - 'avg_success_eval': The average number of function evaluations for successful runs.
+            - 'hv': The hypervolume.
+            - 'par2': Penalized average runtime with a factor of 2.
+            - 'par10': Penalized average runtime with a factor of 10.
+            - 'avg_height': The average height of the returned points.
+            - 'ert': The expected runtime.
+            - 'sp': The success performance.
+        """
         self.run()
         results = list(self.results)
         run_num = len(results)
@@ -123,11 +173,15 @@ class AlgorithmInstance:
         }
 
     def print(self):
+        """
+        Print the information of this instance.
+        """
         pprint(self.hash)
         pprint(self.info)
-        pprint(self.performance_measures())
     
     def print_results(self):
+        """Print all results of this instance."""
+        pprint(self.performance_measures())
         for i, result in enumerate(self.results):
             print(f'=== Result #{i} ===')
             print(f'{len(result.points)}')
@@ -135,6 +189,8 @@ class AlgorithmInstance:
             print()
     
     def plot_histogram(self):
+        """Plot the histogram of the heights, distances to Ben Nevis, and numbers of function of evaluations
+        of all results."""
         heights = []
         distances = []
         evals = []
@@ -153,6 +209,9 @@ class AlgorithmInstance:
         plt.show()
     
     def plot_ret_points(self):
+        """
+        Plot a map of the returned points of all results.
+        """
         ret_points = []
 
         for result in self.results:
@@ -176,9 +235,8 @@ class AlgorithmInstance:
         Parameters
         ----------
         downsampling : int
-            Downsampling factor.
+            Downsampling factor on number of function evaluations.
         """
-
 
         def calc(values_list, method):
             random_results = []
@@ -213,7 +271,6 @@ class AlgorithmInstance:
         length = len(function_values[0])
         x_values = np.arange(downsampling - 1, length * downsampling, downsampling)
         
-        # print(f'Length of function_values: {len(function_values)}')
         re_mean, re_0, re_25, re_50, re_75, re_100 = calc(function_values, 'max')
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
@@ -236,7 +293,7 @@ class AlgorithmInstance:
         
         
         distance_values = pad_list(distance_values)
-        # print(f'Length of distance_values: {len(distance_values)}')
+
         re_mean, re_0, re_25, re_50, re_75, re_100 = calc(distance_values, 'min')
 
         ax2.set_xscale('log') # log scale for x axis
@@ -302,8 +359,6 @@ class AlgorithmInstance:
         
         group_cnts = np.array(group_cnts).T
 
-
-        # plt.xscale('log')
         legend_elements = []
 
         def index_to_color(i):

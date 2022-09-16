@@ -8,6 +8,32 @@ f = nevis.linear_interpolant()
 f_grad = nevis.linear_interpolant(grad=True)
 
 def optimizer(opt):
+    """
+    Decorator for optimization algorithms.
+
+    Parameters
+    ----------
+    opt : function
+        The optimization algorithm to decorate. The function should have the
+        following signature:
+
+        def opt(f, x_max, y_max, **kwargs):
+            # MINIMIZE f((x, y)) subject to 0 <= x <= x_max and 0 <= y <= y_max
+            # f(u, grad=None) returns the function value at u, and modifies grad in place
+            # if grad is not None (as used in nlopt)
+            # kwargs contains the hyper-parameters of the algorithm
+            return {
+                'x': (x_best, y_best),
+                'z': z_best,
+                'message': 'A message', # optional
+                'trajectory': [(x, y), ...], # optional
+                'ret_obj': ret_obj, # optional
+            }
+        
+    Returns
+    -------
+    function, which can be used in the constructor of ``Algorithm``
+    """
     
     @wraps(opt)
     def func(**params):
