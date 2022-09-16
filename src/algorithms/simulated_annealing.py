@@ -3,12 +3,7 @@ import scipy.optimize
 import numpy as np
 
 @optimizer
-def run_simulated_annealing(f, x_max, y_max, **kwargs):
-
-    maxiter = kwargs['maxiter']
-    initial_temp = kwargs['initial_temp']
-    restart_temp_ratio = kwargs['restart_temp_ratio']
-    sigma = kwargs['sigma']
+def run_simulated_annealing(f, x_max, y_max, maxiter, initial_temp, restart_temp_ratio, sigma):
 
     ret_x = (0, 0)
     ret_z = 0
