@@ -25,6 +25,7 @@ def run_shgo(f, x_max, y_max, n, iters, sampling_method):
         'message': ret.message
     }
 
+
 shgo = Algorithm(
     'SHGO',
     run_shgo,

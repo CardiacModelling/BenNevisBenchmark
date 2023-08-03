@@ -1,11 +1,12 @@
-from framework import *
+from framework import optimizer, MAX_FES, Algorithm
 import scipy.optimize
 import numpy as np
+
 
 @optimizer
 def run_dual_annealing(f, x_max, y_max, **kwargs):
     ret = scipy.optimize.dual_annealing(
-        f, 
+        f,
         bounds=[(0, x_max), (0, y_max)],
         maxfun=MAX_FES,
         **kwargs
@@ -18,8 +19,9 @@ def run_dual_annealing(f, x_max, y_max, **kwargs):
         'message': ret.message
     }
 
+
 dual_annealing = Algorithm(
-    'Dual Annealing', 
+    'Dual Annealing',
     run_dual_annealing,
     {
         # 'maxiter': np.arange(1500, 3000, 100),

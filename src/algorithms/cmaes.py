@@ -1,5 +1,6 @@
 import pints
-from framework import *
+from framework import optimizer, MAX_FES, SUCCESS_HEIGHT, Algorithm
+
 
 @optimizer
 def run_cmaes(f, x_max, y_max, population_size=None):
@@ -11,6 +12,7 @@ def run_cmaes(f, x_max, y_max, population_size=None):
         """
         Turn a height into an error to be minimised.
         """
+
         def __init__(self, f):
             self.f = f
 
@@ -19,7 +21,7 @@ def run_cmaes(f, x_max, y_max, population_size=None):
 
         def __call__(self, p):
             return self.f(p)
-    
+
     b = pints.RectangularBoundaries([0, 0], [x_max, y_max])
     fes = MAX_FES
     e = Error(f)

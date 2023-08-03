@@ -1,6 +1,7 @@
-import nlopt 
-from framework import *
+import nlopt
+from framework import optimizer, MAX_FES, Algorithm
 import numpy as np
+
 
 @optimizer
 def run_mlsl(f, x_max, y_max):
@@ -26,7 +27,6 @@ def run_mlsl(f, x_max, y_max):
         'x': np.array([x, y]),
         'z': z,
     }
-
 
 
 mlsl = Algorithm(

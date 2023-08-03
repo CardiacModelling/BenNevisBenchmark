@@ -20,13 +20,16 @@ class Algorithm:
         name : string
             The name of the algorithm.
         func : function
-            The function that runs the algorithm. This function takes all the hyper-paramters
-            used by the algorithm as keyword arguments, and returns a ``Result`` object.
+            The function that runs the algorithm. This function takes all the
+            hyper-paramters used by the algorithm as keyword arguments, and
+            returns a ``Result`` object.
         param_space : dict
-            A dictionary mapping the names of hyper-paramters to the list of values they can take.
+            A dictionary mapping the names of hyper-paramters to the list of
+            values they can take.
         version : int
-            The version of the algorithm. This is used to distinguish between different versions
-            of the same algorithm so that they are saved in different folders.
+            The version of the algorithm. This is used to distinguish between
+            different versions of the same algorithm so that they are saved in
+            different folders.
         """
         self.name = name
         self.func = func
@@ -44,7 +47,7 @@ class Algorithm:
 
     def __call__(self, **params) -> Result:
         return self.func(**params)
-    
+
     def generate_instance(self, instance_hash=None, **params):
         """
         Generate an ``AlgorithmInstance``.
@@ -52,30 +55,31 @@ class Algorithm:
         Parameters
         ----------
         instance_hash : int
-            The hash of the instance. If not provided, a hash will be generated based on the
-            time.
+            The hash of the instance. If not provided, a hash will be
+            generated based on the time.
         **params
             Hyper-paramters of this instance.
         """
-        return AlgorithmInstance(self, params, self.save_handler, hash=instance_hash)
-    
+        return AlgorithmInstance(self, params, self.save_handler,
+                                 hash=instance_hash)
+
     def generate_random_instance(self):
         """
-        Generate a random instance of this algorithm by drawing from the hyper-parameter
-        space.
+        Generate a random instance of this algorithm by drawing from the
+        hyper-parameter space.
         """
         params = {}
         for param, values in self.param_space.items():
             params[param] = np.random.choice(values)
         return AlgorithmInstance(self, params, self.save_handler)
-    
+
     def load_instances(self):
         """
         Load all instances from the save folder.
         """
         instances = self.save_handler.get_all_instances()
         self.instances.update(instances)
-    
+
     def tune_params(
         self,
         iter_num=RS_ITER_NUM,
@@ -84,13 +88,14 @@ class Algorithm:
     ):
         """
         Hyper-paramter tuning using random search.
-        
+
         Parameters
         ----------
         iter_num : int
             The number of iterations used in random search.
         measure : string
-            The name of the performance measure used to select the best instance.
+            The name of the performance measure used to select the best
+            instance.
         mode : string, 'min' or 'max'
             Whether to select the instance with the minimum/maximum ``measure``
             as the best one.
@@ -98,7 +103,8 @@ class Algorithm:
 
         Returns
         -------
-        An ``AlgorithmInstance``, the best instance found in terms of ``measure``.
+        An ``AlgorithmInstance``, the best instance found in terms of
+        ``measure``.
         """
 
         instances = list(self.instances)
@@ -114,21 +120,22 @@ class Algorithm:
             current_value = current_instance.performance_measures()[measure]
             print(f'{measure} = {current_value}')
             if (mode == 'max' and current_value >= best_value)\
-                or (mode == 'min' and current_value <= best_value):
+                    or (mode == 'min' and current_value <= best_value):
                 best_value = current_value
                 self.best_instance = current_instance
-            
+
             print()
-        
+
         self.instances.update(instances)
 
         return self.best_instance
 
-    
-
-    def plot_two_measures(self, x_measure='avg_success_eval', y_measure='failure_rate'):
+    def plot_two_measures(self,
+                          x_measure='avg_success_eval',
+                          y_measure='failure_rate'):
         """
-        Plot one performance measure against another on a scatter plot, arcoss all instances.
+        Plot one performance measure against another on a scatter plot, arcoss
+        all instances.
 
         Parameters
         ----------
@@ -145,37 +152,40 @@ class Algorithm:
             measures = instance.performance_measures()
             xs.append(measures[x_measure])
             ys.append(measures[y_measure])
-        
+
         plt.scatter(xs, ys)
         plt.xlabel(x_measure)
         plt.ylabel(y_measure)
-        plt.title(f'Performance measures of {self.name} across {len(instances)} instances')
+        plt.title(f'Performance measures of {self.name}'
+                  f'across {len(instances)} instances')
         plt.show()
-    
+
     def plot_all_measures(self):
         """
         Plot the pair plot of all performance measures, across all instances.
         """
         instances = list(self.instances)
-        df = pd.DataFrame([instance.performance_measures() for instance in instances])
+        df = pd.DataFrame([instance.performance_measures()
+                          for instance in instances])
         df.drop(['failure_rate', 'success_cnt'], axis=1, inplace=True)
         seaborn.pairplot(df)
         plt.show()
-    
+
     def plot_tuning(
-        self, 
-        param_x, 
-        param_y, 
-        measure_color, 
+        self,
+        param_x,
+        param_y,
+        measure_color,
         measure_area,
         x_log=False,
         y_log=False,
         reverse_area=False
     ):
         """
-        Plot the performance of all instances generated by hyper-parameter tuning, by showing a
-        scatter plot with one hyper-parameter on each axis and the color or area of the marks
-        representing designated performance measures.
+        Plot the performance of all instances generated by hyper-parameter
+        tuning, by showing a scatter plot with one hyper-parameter on each
+        axis and the color or area of the marks representing designated
+        performance measures.
 
         Parameters
         ----------
@@ -184,15 +194,18 @@ class Algorithm:
         param_y : string
             The name of the hyper-parameter shown on the y axis.
         measure_color : string
-            The name of the performance measure shown using the color of the marks.
+            The name of the performance measure shown using the color of the
+            marks.
         measure_area : string
-            The name of the performance measure shown using the area of the marks.
+            The name of the performance measure shown using the area of the
+            marks.
         x_log : bool
             If the x axis needs to be plotted on the log scale.
         y_log : bool
             If the y axis needs to be plotted on the log scale.
         reverse_area : bool
-            If True, a larger area indicates a smaller value of ``measure_area``.
+            If True, a larger area indicates a smaller value of
+            ``measure_area``.
         """
 
         instances = list(self.instances)
@@ -207,21 +220,19 @@ class Algorithm:
             measures = instance.performance_measures()
             m1s.append(measures[measure_color])
             m2s.append(measures[measure_area])
-        
+
         if x_log:
             plt.xscale('log')
         if y_log:
             plt.yscale('log')
-        
+
         m2s = np.array(m2s)
         area_normalizer = matplotlib.colors.Normalize(m2s.min(), m2s.max())
         m2s = area_normalizer(m2s)
         if reverse_area:
-            m2s =  1 - m2s
-        
+            m2s = 1 - m2s
+
         plt.scatter(xs, ys, s=m2s * 200, c=m1s, alpha=.5)
         plt.colorbar(label=measure_color)
         plt.title('Hyper-parameter tuning results')
         plt.show()
-
-

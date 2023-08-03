@@ -8,3 +8,11 @@ RS_ITER_NUM = 15
 RUN_NUM = 10
 # Path to save instances and results
 SAVE_PATH = '../saved/'
+
+__all__ = [
+    'MAX_FES',
+    'SUCCESS_HEIGHT',
+    'RS_ITER_NUM',
+    'RUN_NUM',
+    'SAVE_PATH',
+]
