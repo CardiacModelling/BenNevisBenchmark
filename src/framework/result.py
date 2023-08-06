@@ -21,12 +21,15 @@ class Result:
     def __init__(self,
                  ret_point,
                  ret_height,
-                 points,
+                 points=[],
                  message='',
                  heights=None,
                  distances=None,
                  trajectory=[],
-                 ret_obj=None
+                 is_success=None,
+                 eval_num=None,
+                 create_time=None,
+                 len_points=None,
                  ):
         """
         Class for the result of an optimization run.
@@ -47,9 +50,6 @@ class Result:
             The corresponding distances to Ben Neivs of ``points``.
         trajectory : array of tuple
             Trajectory used in plots.
-        ret_object : Any
-            Result object returned by the optimization process, or any object
-            containing potentially useful information.
         """
         self.ret_point = ret_point
         self.ret_height = ret_height
@@ -64,9 +64,26 @@ class Result:
             self.distances = distances
         self.trajectory = np.array(trajectory)
         self.message = message
-        self.ret_obj = ret_obj
-        # used as an identifier
-        self.time = time.time()
+
+        if self.points.size == 0:
+            assert is_success is not None,\
+                'A partial result must have `is_success` and `eval_num`'
+
+        if is_success is None:
+            self.is_success, self.eval_num = self.success_eval()
+        else:
+            self.is_success, self.eval_num = is_success, eval_num
+
+        if create_time is None:
+            # used as an identifier
+            self.create_time = time.time()
+        else:
+            self.create_time = create_time
+
+        if len_points is not None:
+            self.len_points = len_points
+        else:
+            self.len_points = len(self.points)
 
     def get_heights(self):
         """Calcuate heights for all visited points."""
@@ -76,17 +93,50 @@ class Result:
         """Calcuate distances to Ben Nevis for all visited points."""
         return np.array([_dist_to_ben(*p) for p in self.points])
 
-    def success_eval(self, max_fes=MAX_FES, success_height=SUCCESS_HEIGHT):
+    def success_eval(self):
         """Return a tuple, (is_success, eval_num), indicating if the result is
         succeessful and how many function evaluations it used."""
         for i, h in enumerate(self.heights, 1):
-            if i > max_fes:
+            if i > MAX_FES:
                 break
 
-            if h >= success_height:
+            if h >= SUCCESS_HEIGHT:
                 return True, i
 
-        return False, min(max_fes, len(self.heights))
+        return False, min(MAX_FES, len(self.heights))
+
+    def to_dict(self):
+        def to_float_tuple(t):
+            x, y = t
+            return float(x), float(y)
+
+        points = [to_float_tuple(point) for point in self.points]
+        trajectory = [to_float_tuple(point) for point in self.trajectory]
+        heights = [float(z) for z in self.heights]
+
+        is_success, eval_num = self.success_eval()
+
+        return {
+            'points': points,
+            'trajectory': trajectory,
+            'heights': heights,
+
+            'ret_point': to_float_tuple(self.ret_point),
+            'ret_height': float(self.ret_height),
+            'message': self.message,
+            'create_time': self.create_time,
+
+            'is_success': is_success,
+            'eval_num': eval_num,
+            'len_points': len(points),
+            'max_fes': MAX_FES,
+            'success_height': SUCCESS_HEIGHT,
+        }
+
+    def turn_partial(self):
+        self.points = np.array([])
+        self.heights = np.array([])
+        self.distances = np.array([])
 
     @property
     def ret_distance(self):
@@ -96,16 +146,16 @@ class Result:
 
     def print(self):
         """Print a summary of the result."""
-        print(self.time)
+        print(self.create_time)
         print(f'Number of function evals: {len(self.points)}')
         x, y = self.ret_point
         nevis.print_result(x, y, self.ret_height)
 
     def __eq__(self, other) -> bool:
-        return self.time == other.time
+        return self.create_time == other.create_time
 
     def __hash__(self) -> int:
-        return int(self.time * 1000000)
+        return int(self.create_time * 1000000)
 
     @property
     def _plot_labels(self):

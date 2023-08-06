@@ -4,7 +4,7 @@ import nevis
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from .config import MAX_FES, SUCCESS_HEIGHT, RUN_NUM
+from .config import MAX_FES, RUN_NUM
 import time
 from tqdm import tqdm
 
@@ -54,6 +54,7 @@ class AlgorithmInstance:
 
         self.save_handler = save_handler
 
+        self.results_patial = False
         self.results = set()
         self.load_results()
 
@@ -87,16 +88,24 @@ class AlgorithmInstance:
             self.results.add(result)
             self.save_handler.add_result(self, result)
 
-    def load_results(self):
+    def make_results_partial(self):
+        for result in self.results:
+            result.turn_partial()
+
+    def fetch_full_results(self):
+        if self.results_patial:
+            self.load_results(False)
+
+    def load_results(self, partial=True):
         """Load all results saved for this instance."""
-        results = self.save_handler.load_results(self.hash)
-        self.results.update(results)
+        results = self.save_handler.load_results(self.hash, partial)
+        self.results = results
+        if results:
+            self.results_patial = partial
 
     @cache
     def performance_measures(
         self,
-        max_fes=MAX_FES,
-        success_height=SUCCESS_HEIGHT,
         run=True,
     ):
         """
@@ -104,10 +113,6 @@ class AlgorithmInstance:
 
         Parameters
         ----------
-        max_fes : int
-            The maximum number of function evaluations.
-        success_height : float
-            The height threshold for a successful run.
         run : bool
             Whether to run the instance first if there are not enough results
             saved.
@@ -141,7 +146,7 @@ class AlgorithmInstance:
         failed_eval_cnt = 0
         height_sum = 0
         for result in results:
-            is_success, eval_cnt = result.success_eval(max_fes, success_height)
+            is_success, eval_cnt = result.is_success, result.eval_num
             if is_success:
                 success_cnt += 1
                 success_eval_cnt += eval_cnt
@@ -174,9 +179,9 @@ class AlgorithmInstance:
             'failure_rate': 1 - success_rate,
             'success_cnt': success_cnt,
             'avg_success_eval': avg_success_eval,
-            'hv': (max_fes - avg_success_eval) * success_rate,
-            'par2': (failed_cnt * 2 * max_fes + success_eval_cnt) / run_num,
-            'par10':  (failed_cnt * 10 * max_fes + success_eval_cnt) / run_num,
+            'hv': (MAX_FES - avg_success_eval) * success_rate,
+            'par2': (failed_cnt * 2 * MAX_FES + success_eval_cnt) / run_num,
+            'par10':  (failed_cnt * 10 * MAX_FES + success_eval_cnt) / run_num,
             'avg_height': height_sum / run_num,
             'ert': avg_success_eval + (
                 1 - success_rate) / success_rate * avg_failed_eval,
@@ -192,17 +197,18 @@ class AlgorithmInstance:
 
     def print_results(self):
         """Print all results of this instance."""
+        self.fetch_full_results()
+
         pprint(self.performance_measures())
         for i, result in enumerate(self.results):
             print(f'=== Result #{i} ===')
-            print(f'{len(result.points)}')
+            print(f'{result.len_points}')
             result.print()
             print()
 
     def plot_histogram(self):
         """Plot the histogram of the heights, distances to Ben Nevis, and
-        numbers of function of evaluations
-        of all results."""
+        numbers of function of evaluations of all results."""
         heights = []
         distances = []
         evals = []
@@ -210,7 +216,7 @@ class AlgorithmInstance:
         for result in self.results:
             heights.append(result.ret_height)
             distances.append(result.ret_distance)
-            evals.append(len(result.points))
+            evals.append(result.len_points)
 
         fig, axs = plt.subplots(1, 3, figsize=(18, 10))
 
@@ -251,6 +257,8 @@ class AlgorithmInstance:
         downsampling : int
             Downsampling factor on number of function evaluations.
         """
+
+        self.fetch_full_results()
 
         def calc(values_list, method):
             random_results = []
@@ -333,6 +341,8 @@ class AlgorithmInstance:
 
     def plot_stacked_graph(self):
         """Plot a stacked graph for all instances."""
+
+        self.fetch_full_results()
 
         function_values = pad_list([result.heights for result in self.results])
 

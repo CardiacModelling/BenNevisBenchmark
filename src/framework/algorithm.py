@@ -1,9 +1,8 @@
 from .result import Result
 from .algorithm_instance import AlgorithmInstance
 from .save_handler import SaveHandler
-from .config import RS_ITER_NUM, SAVE_PATH
+from .config import RS_ITER_NUM
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 import matplotlib
 import pandas as pd
@@ -37,13 +36,11 @@ class Algorithm:
         self.version = version
         self.best_instance = None
 
-        self.save_handler = SaveHandler(
-            os.path.join(SAVE_PATH, f'{self.name}-{self.version}')
-        )
+        self.save_handler = SaveHandler(self)
 
         self.instances = set()
 
-        self.load_instances()
+        # self.load_instances()
 
     def __call__(self, **params) -> Result:
         return self.func(**params)
@@ -77,8 +74,10 @@ class Algorithm:
         """
         Load all instances from the save folder.
         """
+        print('Loading instances...')
         instances = self.save_handler.get_all_instances()
         self.instances.update(instances)
+        print(f'{len(instances)} instances loaded.')
 
     def tune_params(
         self,
@@ -122,7 +121,11 @@ class Algorithm:
             if (mode == 'max' and current_value >= best_value)\
                     or (mode == 'min' and current_value <= best_value):
                 best_value = current_value
+                if self.best_instance is not None:
+                    self.best_instance.make_results_partial()
                 self.best_instance = current_instance
+            else:
+                current_instance.make_results_partial()
 
             print()
 

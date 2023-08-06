@@ -27,7 +27,6 @@ def optimizer(opt):
                 'z': z_best,
                 'message': 'A message', # optional
                 'trajectory': [(x, y), ...], # optional
-                'ret_obj': ret_obj, # optional
             }
 
     Returns
@@ -65,7 +64,6 @@ def optimizer(opt):
         z = res_dict['z']
         message = res_dict.get('message', '')
         trajectory = res_dict.get('trajectory', [])
-        ret_obj = res_dict.get('ret_obj')
 
         return Result(
             x,
@@ -74,6 +72,5 @@ def optimizer(opt):
             message,
             function_values,
             trajectory=trajectory,
-            ret_obj=ret_obj
         )
     return func

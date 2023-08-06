@@ -5,6 +5,7 @@ import numpy as np
 
 @optimizer
 def run_dual_annealing(f, x_max, y_max, **kwargs):
+    kwargs['maxiter'] = int(kwargs['maxiter'])
     ret = scipy.optimize.dual_annealing(
         f,
         bounds=[(0, x_max), (0, y_max)],
@@ -15,7 +16,6 @@ def run_dual_annealing(f, x_max, y_max, **kwargs):
     return {
         'x': ret.x,
         'z': ret.fun,
-        'ret_obj': ret,
         'message': ret.message
     }
 
@@ -31,5 +31,5 @@ dual_annealing = Algorithm(
         # 'visit': np.linspace(1 + EPS, 3, 1000),
         # 'accept': np.logspace(-5, -1e-4, 1000),
     },
-    version=1
+    version=2
 )
