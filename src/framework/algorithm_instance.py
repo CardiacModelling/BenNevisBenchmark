@@ -4,7 +4,7 @@ import nevis
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from .config import MAX_FES, SUCCESS_HEIGHT, RUN_NUM
+from .config import MAX_FES, RUN_NUM
 import time
 from tqdm import tqdm
 
@@ -54,6 +54,7 @@ class AlgorithmInstance:
 
         self.save_handler = save_handler
 
+        self.results_patial = False
         self.results = set()
         self.load_results()
 
@@ -87,27 +88,32 @@ class AlgorithmInstance:
             self.results.add(result)
             self.save_handler.add_result(self, result)
 
-    def load_results(self):
+    def make_results_partial(self):
+        for result in self.results:
+            result.turn_partial()
+
+    def fetch_full_results(self):
+        if self.results_patial:
+            self.load_results(False)
+
+    def load_results(self, partial=True):
         """Load all results saved for this instance."""
-        results = self.save_handler.load_results(self.hash)
-        self.results.update(results)
+        results = self.save_handler.load_results(self.hash, partial)
+        self.results = results
+        if results:
+            self.results_patial = partial
 
     @cache
     def performance_measures(
         self,
-        max_fes=MAX_FES,
-        success_height=SUCCESS_HEIGHT,
         run=True,
+        run_num=RUN_NUM,
     ):
         """
         Return all the performance measures of the instance.
 
         Parameters
         ----------
-        max_fes : int
-            The maximum number of function evaluations.
-        success_height : float
-            The height threshold for a successful run.
         run : bool
             Whether to run the instance first if there are not enough results
             saved.
@@ -131,25 +137,26 @@ class AlgorithmInstance:
             - 'sp': The success performance.
         """
         if run:
-            self.run()
-        results = list(self.results)
+            self.run(run_num=run_num)
+        results = sorted(
+            list(self.results), key=lambda x: x.create_time)[:run_num]
         run_num = len(results)
 
-        success_cnt = 0
-        success_eval_cnt = 0
-        failed_cnt = 0
-        failed_eval_cnt = 0
-        height_sum = 0
+        success_evals = []
+        failed_evals = []
+        ret_heights = []
         for result in results:
-            is_success, eval_cnt = result.success_eval(max_fes, success_height)
+            is_success, eval_cnt = result.is_success, result.eval_num
             if is_success:
-                success_cnt += 1
-                success_eval_cnt += eval_cnt
+                success_evals.append(eval_cnt)
             else:
-                failed_cnt += 1
-                failed_eval_cnt += eval_cnt
+                failed_evals.append(eval_cnt)
 
-            height_sum += result.ret_height
+            ret_heights.append(result.ret_height)
+
+        success_cnt = len(success_evals)
+        success_eval_cnt = sum(success_evals)
+        failed_cnt = len(failed_evals)
 
         if success_cnt == 0:
             return {
@@ -163,25 +170,70 @@ class AlgorithmInstance:
                 'avg_height': 0,
                 'ert': float('inf'),
                 'sp': float('inf'),
+                'ert_std': float('inf'),
+                'success_rate_upper': 0,
+                'success_rate_lower': 0,
+                'success_rate_length': 0,
             }
 
+        success_eval_var = np.var(success_evals, ddof=1)
+        failed_eval_var = np.var(failed_evals, ddof=1)
+        avg_failed_eval_sqr = np.mean(np.square(failed_evals))
+
         success_rate = success_cnt / run_num
-        avg_success_eval = success_eval_cnt / success_cnt
-        avg_failed_eval = failed_eval_cnt / failed_cnt if failed_cnt != 0 \
+        avg_success_eval = np.mean(success_evals)
+        avg_failed_eval = np.mean(failed_evals) if failed_cnt != 0 \
             else 0
+
+        # Wilson score interval for success rate
+        z = 1.96
+        radius = z / (run_num + z ** 2) * np.sqrt(
+            success_cnt * failed_cnt / run_num + z ** 2 / 4)
+        center = (success_cnt + 0.5 * z ** 2) / (run_num + z ** 2)
+
         return {
             'success_rate': success_rate,
             'failure_rate': 1 - success_rate,
             'success_cnt': success_cnt,
             'avg_success_eval': avg_success_eval,
-            'hv': (max_fes - avg_success_eval) * success_rate,
-            'par2': (failed_cnt * 2 * max_fes + success_eval_cnt) / run_num,
-            'par10':  (failed_cnt * 10 * max_fes + success_eval_cnt) / run_num,
-            'avg_height': height_sum / run_num,
+            'hv': (MAX_FES - avg_success_eval) * success_rate,
+            'par2': (failed_cnt * 2 * MAX_FES + success_eval_cnt) / run_num,
+            'par10':  (failed_cnt * 10 * MAX_FES + success_eval_cnt) / run_num,
+            'avg_height': np.mean(ret_heights),
             'ert': avg_success_eval + (
-                1 - success_rate) / success_rate * avg_failed_eval,
+                (1 - success_rate) / success_rate * avg_failed_eval
+            ),
             'sp': avg_success_eval / success_rate,
+            'ert_std': np.sqrt(
+                (1 - success_rate) / success_rate * failed_eval_var + (
+                    (1-success_rate) / (success_rate**2) * avg_failed_eval_sqr
+                ) + success_eval_var),
+            'success_rate_upper': center + radius,
+            'success_rate_lower': center - radius,
+            'success_rate_length': radius * 2,
         }
+
+    def plot_measure_by_runs(self, measures=['ert'], max_run_num=RUN_NUM):
+        self.run(run_num=max_run_num)
+        ys = []
+        xs = list(range(1, max_run_num + 1))
+        for i in xs:
+            cur_ys = []
+            for measure in measures:
+                y = self.performance_measures(run=True, run_num=i)[measure]
+                cur_ys.append(y)
+            print(i, cur_ys)
+            ys.append(cur_ys)
+        fig, ax = plt.subplots(1, 1, figsize=(12, 8))
+        fig.suptitle(
+            f'Measures by number of runs for instance {self.hash}'
+            ' of algorithm ' + self.info['algorithm_name'])
+        ax.set_xlabel('Number of runs')
+        ax.set_ylabel('Measure')
+        for i, measure in enumerate(measures):
+            ax.plot(xs, [y[i] for y in ys], label=measure)
+        ax.legend(loc='upper right')
+        plt.show()
 
     def print(self):
         """
@@ -192,17 +244,18 @@ class AlgorithmInstance:
 
     def print_results(self):
         """Print all results of this instance."""
+        self.fetch_full_results()
+
         pprint(self.performance_measures())
         for i, result in enumerate(self.results):
             print(f'=== Result #{i} ===')
-            print(f'{len(result.points)}')
+            print(f'{result.len_points}')
             result.print()
             print()
 
     def plot_histogram(self):
         """Plot the histogram of the heights, distances to Ben Nevis, and
-        numbers of function of evaluations
-        of all results."""
+        numbers of function of evaluations of all results."""
         heights = []
         distances = []
         evals = []
@@ -210,7 +263,7 @@ class AlgorithmInstance:
         for result in self.results:
             heights.append(result.ret_height)
             distances.append(result.ret_distance)
-            evals.append(len(result.points))
+            evals.append(result.len_points)
 
         fig, axs = plt.subplots(1, 3, figsize=(18, 10))
 
@@ -251,6 +304,8 @@ class AlgorithmInstance:
         downsampling : int
             Downsampling factor on number of function evaluations.
         """
+
+        self.fetch_full_results()
 
         def calc(values_list, method):
             random_results = []
@@ -333,6 +388,8 @@ class AlgorithmInstance:
 
     def plot_stacked_graph(self):
         """Plot a stacked graph for all instances."""
+
+        self.fetch_full_results()
 
         function_values = pad_list([result.heights for result in self.results])
 

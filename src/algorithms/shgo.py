@@ -21,7 +21,6 @@ def run_shgo(f, x_max, y_max, n, iters, sampling_method):
     return {
         'x': ret.x,
         'z': ret.fun,
-        'ret_obj': ret,
         'message': ret.message
     }
 

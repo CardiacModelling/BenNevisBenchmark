@@ -1,9 +1,8 @@
 from .result import Result
 from .algorithm_instance import AlgorithmInstance
 from .save_handler import SaveHandler
-from .config import RS_ITER_NUM, SAVE_PATH
+from .config import RS_ITER_NUM
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 import matplotlib
 import pandas as pd
@@ -37,13 +36,11 @@ class Algorithm:
         self.version = version
         self.best_instance = None
 
-        self.save_handler = SaveHandler(
-            os.path.join(SAVE_PATH, f'{self.name}-{self.version}')
-        )
+        self.save_handler = SaveHandler(self)
 
         self.instances = set()
 
-        self.load_instances()
+        # self.load_instances()
 
     def __call__(self, **params) -> Result:
         return self.func(**params)
@@ -63,6 +60,28 @@ class Algorithm:
         return AlgorithmInstance(self, params, self.save_handler,
                                  hash=instance_hash)
 
+    def generate_all_instances(self):
+        self.instances = set()
+        keys = list(self.param_space.keys())
+        values = list(self.param_space.values())
+
+        def helper(i, cur_params):
+            if i == -1:
+                self.instances.add(AlgorithmInstance(
+                    self,
+                    cur_params,
+                    self.save_handler
+                ))
+                print(f'Instance generated with params {cur_params}')
+                return
+
+            for value in values[i]:
+                copied_params = dict(cur_params)
+                copied_params[keys[i]] = value
+                helper(i - 1, copied_params)
+
+        helper(len(keys) - 1, {})
+
     def generate_random_instance(self):
         """
         Generate a random instance of this algorithm by drawing from the
@@ -77,8 +96,22 @@ class Algorithm:
         """
         Load all instances from the save folder.
         """
+        print('Loading instances...')
         instances = self.save_handler.get_all_instances()
         self.instances.update(instances)
+        print(f'{len(instances)} instances loaded.')
+
+    def load_instance(self, instance_hash):
+        """
+        Load an instance.
+
+        Parameters
+        ----------
+        instance_hash : float
+            The hash of the instance to be loaded.
+        """
+        instance = self.save_handler.load_instance(instance_hash)
+        self.instances.add(instance)
 
     def tune_params(
         self,
@@ -122,7 +155,11 @@ class Algorithm:
             if (mode == 'max' and current_value >= best_value)\
                     or (mode == 'min' and current_value <= best_value):
                 best_value = current_value
+                if self.best_instance is not None:
+                    self.best_instance.make_results_partial()
                 self.best_instance = current_instance
+            else:
+                current_instance.make_results_partial()
 
             print()
 
