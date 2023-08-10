@@ -95,7 +95,7 @@ int main() {
         cout << i << ": (" << x << ", " << y << ")\n";
     }
 
-    for (int x = 1; x <= n; x++) {
+    for (int x = 1; x <= m; x++) {
         for (int y = 1; y <= n; y++) {
             cout << label[x][y] << " ";
         }
