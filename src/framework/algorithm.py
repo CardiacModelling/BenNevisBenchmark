@@ -60,6 +60,28 @@ class Algorithm:
         return AlgorithmInstance(self, params, self.save_handler,
                                  hash=instance_hash)
 
+    def generate_all_instances(self):
+        self.instances = set()
+        keys = list(self.param_space.keys())
+        values = list(self.param_space.values())
+
+        def helper(i, cur_params):
+            if i == -1:
+                self.instances.add(AlgorithmInstance(
+                    self,
+                    cur_params,
+                    self.save_handler
+                ))
+                print(f'Instance generated with params {cur_params}')
+                return
+
+            for value in values[i]:
+                copied_params = dict(cur_params)
+                copied_params[keys[i]] = value
+                helper(i - 1, copied_params)
+
+        helper(len(keys) - 1, {})
+
     def generate_random_instance(self):
         """
         Generate a random instance of this algorithm by drawing from the
@@ -78,6 +100,18 @@ class Algorithm:
         instances = self.save_handler.get_all_instances()
         self.instances.update(instances)
         print(f'{len(instances)} instances loaded.')
+
+    def load_instance(self, instance_hash):
+        """
+        Load an instance.
+
+        Parameters
+        ----------
+        instance_hash : float
+            The hash of the instance to be loaded.
+        """
+        instance = self.save_handler.load_instance(instance_hash)
+        self.instances.add(instance)
 
     def tune_params(
         self,

@@ -9,7 +9,7 @@ SUCCESS_HEIGHT = 1340
 # Number of algorithm instances to generate in a hyper-parameter tuning
 RS_ITER_NUM = 15
 # Number of runs for each algorithm instance by default
-RUN_NUM = 25
+RUN_NUM = 50
 # Uri for mongodb connection
 MONGODB_URI = os.getenv('MONGODB_URI')
 
