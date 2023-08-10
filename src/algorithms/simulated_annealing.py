@@ -10,7 +10,7 @@ def run_simulated_annealing(f, x_max, y_max, maxiter, initial_temp,
     ret_x = (0, 0)
     ret_z = 0
 
-    for _ in range(maxiter):
+    for _ in range(int(maxiter)):
         k = 0
         x_k = np.random.uniform((0, 0), (x_max, y_max))
         f_x_k = f(x_k)

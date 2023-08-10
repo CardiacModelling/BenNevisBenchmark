@@ -4,7 +4,7 @@ import numpy as np
 
 
 @optimizer
-def run_mlsl(f, x_max, y_max):
+def run_mlsl(f, x_max, y_max, population):
     opt = nlopt.opt(nlopt.G_MLSL, 2)
     opt.set_lower_bounds([0, 0])
     opt.set_upper_bounds([x_max, y_max])
@@ -15,7 +15,7 @@ def run_mlsl(f, x_max, y_max):
     local_opt.set_xtol_abs(1e-1)
 
     opt.set_local_optimizer(local_opt)
-    opt.set_population(10)
+    opt.set_population(int(population))
     opt.set_ftol_abs(1e-1)
     opt.set_xtol_abs(1e-1)
     opt.set_maxeval(MAX_FES)
@@ -32,6 +32,8 @@ def run_mlsl(f, x_max, y_max):
 mlsl = Algorithm(
     'MLSL',
     run_mlsl,
-    {},
-    3
+    {
+        'population': list(range(1, 31))
+    },
+    5
 )
