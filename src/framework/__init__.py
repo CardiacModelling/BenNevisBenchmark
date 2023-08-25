@@ -5,6 +5,7 @@ from .save_handler import SaveHandler
 from .algorithm_instance import AlgorithmInstance
 from .algorithm import Algorithm
 from .runner import optimizer
+from .randomiser import Randomiser
 
 del os
 
@@ -18,4 +19,5 @@ __all__ = [
     'AlgorithmInstance',
     'Algorithm',
     'optimizer',
+    'Randomiser',
 ]

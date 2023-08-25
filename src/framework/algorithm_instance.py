@@ -1,12 +1,14 @@
 from functools import cache
-from pprint import pprint
+import pprint
 import nevis
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from .config import MAX_FES, RUN_NUM
+from .config import MAX_FES, RUN_NUM, MAX_INSTANCE_FES
 import time
 from tqdm import tqdm
+import logging
+from .randomiser import Randomiser
 
 
 def pad_list(ls):
@@ -22,7 +24,7 @@ def pad_list(ls):
 
 
 class AlgorithmInstance:
-    def __init__(self, algorithm, params, save_handler, hash=None):
+    def __init__(self, algorithm, instance_index):
         """
         Class for an algorithm instance. All results of this instance
         previously saved will be loaded automatically.
@@ -31,62 +33,56 @@ class AlgorithmInstance:
         ----------
         algorithm : Algorithm
             The algorithm this instance belongs to.
-        params : dict
-            The hyper-paramters of this instance.
-        save_handler : SaveHandler
-            The save handler of the algorithm.
-        hash : int
-            The hash of this instance. If not provided, a hash will be
-            generated based on the time.
         """
+
         self.algorithm = algorithm
-        self.params: dict = params
-
-        self.info = {
-            'algorithm_name': algorithm.name,
-            'algorithm_version': algorithm.version,
-            **params,
-        }
-        if hash is None:
-            self.hash = time.time()
-        else:
-            self.hash = hash
-
-        self.save_handler = save_handler
-
+        self.instance_index = instance_index
+        
         self.results_patial = False
         self.results = set()
         self.load_results()
+    
+    @property
+    def info(self):
+        return {
+            'algorithm_name': self.algorithm.name,
+            'algorithm_version': self.algorithm.version,
+            'instance_index': self.instance_index,
+        }
 
     def __eq__(self, other) -> bool:
-        return self.hash == other.hash
+        return self.info == other.info
 
     def __hash__(self):
-        return int(self.hash * 1000000)
+        return hash(self.algorithm.name + "$" + str(self.algorithm.version) + "$" + str(self.instance_index))
 
-    def run(self, run_num=RUN_NUM):
+    def run(self, save_handler):
         """
-        Run this instance and save all results. Notice that this function will
-        not  run the instance if there are already enough results saved for
-        this instance.
-
-        Parameters
-        ----------
-        run_num : int
-            The number of times to run this instance.
+        Run this instance and save all results.
         """
-        self.save_handler.save_instance(self)
 
-        if len(self.results) >= run_num:
+        save_handler.save_instance(self)
+
+        current_instance_fes = 0
+        for result in self.results:
+            current_instance_fes += result.eval_num
+        
+        if current_instance_fes >= MAX_INSTANCE_FES:
             return
 
-        print(f'Running instance {self.hash}')
-        pprint(self.info)
-        remain_run_times = run_num - len(self.results)
-        for _ in tqdm(range(remain_run_times)):
-            result = self.algorithm(**self.params)
+        logging.info(f'Running instance {self.hash}')
+        logging.info(pprint.pformat(self.info))
+        logging.debug(f'Current instance fes: {current_instance_fes}')
+
+        while current_instance_fes < MAX_INSTANCE_FES:
+            run_index = len(self.results)
+            logging.debug(f'Running instance {self.hash} #{run_index}')
+
+            result = self.algorithm(run_index, self.instance_index)
             self.results.add(result)
-            self.save_handler.add_result(self, result)
+            current_instance_fes += result.eval_num
+
+            save_handler.add_result(self, result)
 
     def make_results_partial(self):
         for result in self.results:
@@ -96,27 +92,17 @@ class AlgorithmInstance:
         if self.results_patial:
             self.load_results(False)
 
-    def load_results(self, partial=True):
+    def load_results(self, save_handler):
         """Load all results saved for this instance."""
-        results = self.save_handler.load_results(self.hash, partial)
+        results = save_handler.load_results(self.hash)
         self.results = results
         if results:
-            self.results_patial = partial
+            self.results_patial = True
 
-    @cache
-    def performance_measures(
-        self,
-        run=True,
-        run_num=RUN_NUM,
-    ):
+    def performance_measures(self):
         """
-        Return all the performance measures of the instance.
-
-        Parameters
-        ----------
-        run : bool
-            Whether to run the instance first if there are not enough results
-            saved.
+        Return all the performance measures of the instance. It's safe to run this
+        method if even the results are ``partial''.
 
         Returns
         -------
@@ -136,10 +122,8 @@ class AlgorithmInstance:
             - 'ert': The expected runtime.
             - 'sp': The success performance.
         """
-        if run:
-            self.run(run_num=run_num)
-        results = sorted(
-            list(self.results), key=lambda x: x.create_time)[:run_num]
+
+        results = list(self.results)
         run_num = len(results)
 
         success_evals = []
@@ -213,34 +197,30 @@ class AlgorithmInstance:
             'success_rate_length': radius * 2,
         }
 
-    def plot_measure_by_runs(self, measures=['ert'], max_run_num=RUN_NUM):
-        self.run(run_num=max_run_num)
-        ys = []
-        xs = list(range(1, max_run_num + 1))
-        for i in xs:
-            cur_ys = []
-            for measure in measures:
-                y = self.performance_measures(run=True, run_num=i)[measure]
-                cur_ys.append(y)
-            print(i, cur_ys)
-            ys.append(cur_ys)
-        fig, ax = plt.subplots(1, 1, figsize=(12, 8))
-        fig.suptitle(
-            f'Measures by number of runs for instance {self.hash}'
-            ' of algorithm ' + self.info['algorithm_name'])
-        ax.set_xlabel('Number of runs')
-        ax.set_ylabel('Measure')
-        for i, measure in enumerate(measures):
-            ax.plot(xs, [y[i] for y in ys], label=measure)
-        ax.legend(loc='upper right')
-        plt.show()
+    # def plot_measure_by_runs(self, measures=['ert'], max_run_num=RUN_NUM):
+    #     self.run(run_num=max_run_num)
+    #     ys = []
+    #     xs = list(range(1, max_run_num + 1))
+    #     for i in xs:
+    #         cur_ys = []
+    #         for measure in measures:
+    #             y = self.performance_measures(run=True, run_num=i)[measure]
+    #             cur_ys.append(y)
+    #         print(i, cur_ys)
+    #         ys.append(cur_ys)
+    #     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
+    #     fig.suptitle(
+    #         f'Measures by number of runs for instance {self.hash}'
+    #         ' of algorithm ' + self.info['algorithm_name'])
+    #     ax.set_xlabel('Number of runs')
+    #     ax.set_ylabel('Measure')
+    #     for i, measure in enumerate(measures):
+    #         ax.plot(xs, [y[i] for y in ys], label=measure)
+    #     ax.legend(loc='upper right')
+    #     plt.show()
 
-    def print(self):
-        """
-        Print the information of this instance.
-        """
-        pprint(self.hash)
-        pprint(self.info)
+    def __repr__(self) -> str:
+        return pprint.pformat(self.info)
 
     def print_results(self):
         """Print all results of this instance."""
@@ -253,47 +233,47 @@ class AlgorithmInstance:
             result.print()
             print()
 
-    def plot_histogram(self):
-        """Plot the histogram of the heights, distances to Ben Nevis, and
-        numbers of function of evaluations of all results."""
-        heights = []
-        distances = []
-        evals = []
+    # def plot_histogram(self):
+    #     """Plot the histogram of the heights, distances to Ben Nevis, and
+    #     numbers of function of evaluations of all results."""
+    #     heights = []
+    #     distances = []
+    #     evals = []
 
-        for result in self.results:
-            heights.append(result.ret_height)
-            distances.append(result.ret_distance)
-            evals.append(result.len_points)
+    #     for result in self.results:
+    #         heights.append(result.ret_height)
+    #         distances.append(result.ret_distance)
+    #         evals.append(result.len_points)
 
-        fig, axs = plt.subplots(1, 3, figsize=(18, 10))
+    #     fig, axs = plt.subplots(1, 3, figsize=(18, 10))
 
-        axs[0].hist(heights)
-        axs[1].hist(distances)
-        axs[2].hist(evals)
-        fig.suptitle(
-            f'Histogram of returned heights, distances to Ben Nevis, and'
-            f'numbers of function evals for {len(self.results)} runs of '
-            f'{self.algorithm.name}')
-        plt.show()
+    #     axs[0].hist(heights)
+    #     axs[1].hist(distances)
+    #     axs[2].hist(evals)
+    #     fig.suptitle(
+    #         f'Histogram of returned heights, distances to Ben Nevis, and'
+    #         f'numbers of function evals for {len(self.results)} runs of '
+    #         f'{self.algorithm.name}')
+    #     plt.show()
 
-    def plot_ret_points(self):
-        """
-        Plot a map of the returned points of all results.
-        """
-        ret_points = []
+    # def plot_ret_points(self):
+    #     """
+    #     Plot a map of the returned points of all results.
+    #     """
+    #     ret_points = []
 
-        for result in self.results:
-            ret_points.append(result.ret_point)
+    #     for result in self.results:
+    #         ret_points.append(result.ret_point)
 
-        nevis.plot(
-            labels={
-                'Ben Neivs': nevis.ben(),
-                'Ben Macdui': nevis.Hill.by_rank(2).coords,
-            },
-            points=np.array(ret_points)
-        )
+    #     nevis.plot(
+    #         labels={
+    #             'Ben Neivs': nevis.ben(),
+    #             'Ben Macdui': nevis.Hill.by_rank(2).coords,
+    #         },
+    #         points=np.array(ret_points)
+    #     )
 
-        plt.show()
+    #     plt.show()
 
     def plot_convergence_graph(self, downsampling=1):
         """

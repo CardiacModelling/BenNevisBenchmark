@@ -2,8 +2,11 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-# Maximum number of function evals
-MAX_FES = 50000
+
+# Maximum number of function evals for a single run
+MAX_FES = 50_000
+# Maximum number of function evals for a single instance
+MAX_INSTANCE_FES = 1_000_000
 # Height to reach to be considered a success
 SUCCESS_HEIGHT = 1340
 # Number of algorithm instances to generate in a hyper-parameter tuning

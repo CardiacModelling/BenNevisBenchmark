@@ -1,4 +1,5 @@
-from .result import Result
+from __future__ import annotations
+
 from .algorithm_instance import AlgorithmInstance
 from .save_handler import SaveHandler
 from .config import RS_ITER_NUM
@@ -7,10 +8,15 @@ import matplotlib.pyplot as plt
 import matplotlib
 import pandas as pd
 import seaborn
+import logging
 
 
 class Algorithm:
-    def __init__(self, name, func, param_space, version=1):
+    def __init__(self, 
+                 name: str, 
+                 func: function, 
+                 param_space: dict, 
+                 version: int=1):
         """
         Class for an algorithm.
 
@@ -32,76 +38,103 @@ class Algorithm:
         """
         self.name = name
         self.func = func
-        self.param_space = param_space
         self.version = version
         self.best_instance = None
 
-        self.save_handler = SaveHandler(self)
+        self.param_space = param_space
+        self.param_keys = list(param_space.keys())
+        self.param_values = list(param_space.values())
+        self.param_value_lens = [len(values) for values in self.param_values]
+        self.param_space_size = np.prod(self.param_value_lens)
 
         self.instances = set()
 
-        # self.load_instances()
+    def __call__(self, run_index: int, instance_index: int):
+        params = self.index_to_params(instance_index)
+        return self.func(run_index, **params)
+    
+    def index_to_tuple(self, index):
+        result = []
+        for l in self.param_value_lens[::-1]:
+            result.append(index % l)
+            index //= l
+        return tuple(result[::-1])
 
-    def __call__(self, **params) -> Result:
-        return self.func(**params)
+    def index_to_params(self, index):
+        tpl = self.index_to_tuple(index)
+        return {k: self.param_space[k][i] 
+                for k, i in zip(self.param_keys, tpl)}
+    
+    def tuple_to_index(self, t):
+        result = 0
+        for i, l in enumerate(self.param_value_lens):
+            result *= l
+            result += t[i]
+        return result
+    
+    def params_to_index(self, params):
+        """Find the closest instance index to the given params."""
+        t = []
+        for k in self.param_keys:
+            assert k in params.keys(), f'Key {k} not in params'
+            vs = np.array(self.param_space[k])
+            v = params[k]
+            i = np.argmin(np.abs(vs - v))
+            t.append(i)
+        return self.tuple_to_index(tuple(t))
 
-    def generate_instance(self, instance_hash=None, **params):
+    def generate_instance(self, instance_index): 
         """
         Generate an ``AlgorithmInstance``.
 
         Parameters
         ----------
-        instance_hash : int
-            The hash of the instance. If not provided, a hash will be
-            generated based on the time.
+        instance_index : int
+            The index of the instance to be generated.
+        """
+        instance = AlgorithmInstance(self, instance_index)
+        self.instances.add(instance)
+        return instance
+
+    def generate_instance_from_params(self, **params) -> AlgorithmInstance:
+        """
+        Generate an ``AlgorithmInstance``.
+
+        Parameters
+        ----------
         **params
             Hyper-paramters of this instance.
         """
-        return AlgorithmInstance(self, params, self.save_handler,
-                                 hash=instance_hash)
+        instance_index = self.params_to_index(params)
+        return self.generate_instance(instance_index)
 
     def generate_all_instances(self):
         self.instances = set()
-        keys = list(self.param_space.keys())
-        values = list(self.param_space.values())
+        for i in range(self.param_space_size):
+            self.instances.add(self.generate_instance(i))
 
-        def helper(i, cur_params):
-            if i == -1:
-                self.instances.add(AlgorithmInstance(
-                    self,
-                    cur_params,
-                    self.save_handler
-                ))
-                print(f'Instance generated with params {cur_params}')
-                return
 
-            for value in values[i]:
-                copied_params = dict(cur_params)
-                copied_params[keys[i]] = value
-                helper(i - 1, copied_params)
-
-        helper(len(keys) - 1, {})
-
-    def generate_random_instance(self):
+    def generate_random_instance(self, rand_seed=None) -> AlgorithmInstance:
         """
         Generate a random instance of this algorithm by drawing from the
         hyper-parameter space.
         """
-        params = {}
-        for param, values in self.param_space.items():
-            params[param] = np.random.choice(values)
-        return AlgorithmInstance(self, params, self.save_handler)
+        np.random.seed(rand_seed)
+        i = np.random.randint(0, self.param_space_size)
+        np.random.seed(None)
+        return self.generate_instance(i)
 
-    def load_instances(self):
+
+    def load_instances(self, save_handler):
         """
-        Load all instances from the save folder.
+        Load all instances from storage.
         """
-        print('Loading instances...')
-        instances = self.save_handler.get_all_instances()
+        logging.info(f"Loading instances for algorithm {self.name} ver {self.version}...")
+        instances = save_handler.get_all_instances(self)
         self.instances.update(instances)
-        print(f'{len(instances)} instances loaded.')
+        logging.info(f'{len(instances)} instances loaded.')
 
-    def load_instance(self, instance_hash):
+    def load_instance(self, save_handler, instance_index):
         """
         Load an instance.
 
@@ -110,7 +143,7 @@ class Algorithm:
         instance_hash : float
             The hash of the instance to be loaded.
         """
-        instance = self.save_handler.load_instance(instance_hash)
+        instance = save_handler.load_instance(self, instance_index)
         self.instances.add(instance)
 
     def tune_params(
@@ -149,9 +182,10 @@ class Algorithm:
         best_value = float('-inf') if mode == 'max' else float('inf')
 
         for i, current_instance in enumerate(instances[:iter_num], 1):
-            print(f'Calculating instance {i} / {iter_num}')
+            logging.info(f'Calculating instance {i} / {iter_num}')
             current_value = current_instance.performance_measures()[measure]
-            print(f'{measure} = {current_value}')
+
+            logging.info(f'{measure} = {current_value}')
             if (mode == 'max' and current_value >= best_value)\
                     or (mode == 'min' and current_value <= best_value):
                 best_value = current_value
@@ -161,115 +195,111 @@ class Algorithm:
             else:
                 current_instance.make_results_partial()
 
-            print()
-
-        self.instances.update(instances)
-
         return self.best_instance
 
-    def plot_two_measures(self,
-                          x_measure='avg_success_eval',
-                          y_measure='failure_rate'):
-        """
-        Plot one performance measure against another on a scatter plot, arcoss
-        all instances.
+    # def plot_two_measures(self,
+    #                       x_measure='avg_success_eval',
+    #                       y_measure='failure_rate'):
+    #     """
+    #     Plot one performance measure against another on a scatter plot, arcoss
+    #     all instances.
 
-        Parameters
-        ----------
-        x_measure : string
-            The name of the performance measure shown on the x axis.
-        y_measure : string
-            The name of the performance measure shown on the x axis.
-        """
-        instances = list(self.instances)
-        xs = []
-        ys = []
+    #     Parameters
+    #     ----------
+    #     x_measure : string
+    #         The name of the performance measure shown on the x axis.
+    #     y_measure : string
+    #         The name of the performance measure shown on the x axis.
+    #     """
+    #     instances = list(self.instances)
+    #     xs = []
+    #     ys = []
 
-        for instance in instances:
-            measures = instance.performance_measures()
-            xs.append(measures[x_measure])
-            ys.append(measures[y_measure])
+    #     for instance in instances:
+    #         measures = instance.performance_measures()
+    #         xs.append(measures[x_measure])
+    #         ys.append(measures[y_measure])
 
-        plt.scatter(xs, ys)
-        plt.xlabel(x_measure)
-        plt.ylabel(y_measure)
-        plt.title(f'Performance measures of {self.name}'
-                  f'across {len(instances)} instances')
-        plt.show()
+    #     plt.scatter(xs, ys)
+    #     plt.xlabel(x_measure)
+    #     plt.ylabel(y_measure)
+    #     plt.title(f'Performance measures of {self.name}'
+    #               f'across {len(instances)} instances')
+    #     plt.show()
 
-    def plot_all_measures(self):
-        """
-        Plot the pair plot of all performance measures, across all instances.
-        """
-        instances = list(self.instances)
-        df = pd.DataFrame([instance.performance_measures()
-                          for instance in instances])
-        df.drop(['failure_rate', 'success_cnt'], axis=1, inplace=True)
-        seaborn.pairplot(df)
-        plt.show()
+    # def plot_all_measures(self):
+    #     """
+    #     Plot the pair plot of all performance measures, across all instances.
+    #     """
+    #     instances = list(self.instances)
+    #     df = pd.DataFrame([instance.performance_measures()
+    #                       for instance in instances])
+    #     df.drop(['failure_rate', 'success_cnt'], axis=1, inplace=True)
+    #     seaborn.pairplot(df)
+    #     plt.show()
 
-    def plot_tuning(
-        self,
-        param_x,
-        param_y,
-        measure_color,
-        measure_area,
-        x_log=False,
-        y_log=False,
-        reverse_area=False
-    ):
-        """
-        Plot the performance of all instances generated by hyper-parameter
-        tuning, by showing a scatter plot with one hyper-parameter on each
-        axis and the color or area of the marks representing designated
-        performance measures.
+    # def plot_tuning(
+    #     self,
+    #     param_x,
+    #     param_y,
+    #     measure_color,
+    #     measure_area,
+    #     x_log=False,
+    #     y_log=False,
+    #     reverse_area=False
+    # ):
+    #     """
+    #     Plot the performance of all instances generated by hyper-parameter
+    #     tuning, by showing a scatter plot with one hyper-parameter on each
+    #     axis and the color or area of the marks representing designated
+    #     performance measures.
 
-        Parameters
-        ----------
-        param_x : string
-            The name of the hyper-parameter shown on the x axis.
-        param_y : string
-            The name of the hyper-parameter shown on the y axis.
-        measure_color : string
-            The name of the performance measure shown using the color of the
-            marks.
-        measure_area : string
-            The name of the performance measure shown using the area of the
-            marks.
-        x_log : bool
-            If the x axis needs to be plotted on the log scale.
-        y_log : bool
-            If the y axis needs to be plotted on the log scale.
-        reverse_area : bool
-            If True, a larger area indicates a smaller value of
-            ``measure_area``.
-        """
+    #     Parameters
+    #     ----------
+    #     param_x : string
+    #         The name of the hyper-parameter shown on the x axis.
+    #     param_y : string
+    #         The name of the hyper-parameter shown on the y axis.
+    #     measure_color : string
+    #         The name of the performance measure shown using the color of the
+    #         marks.
+    #     measure_area : string
+    #         The name of the performance measure shown using the area of the
+    #         marks.
+    #     x_log : bool
+    #         If the x axis needs to be plotted on the log scale.
+    #     y_log : bool
+    #         If the y axis needs to be plotted on the log scale.
+    #     reverse_area : bool
+    #         If True, a larger area indicates a smaller value of
+    #         ``measure_area``.
+    #     """
 
-        instances = list(self.instances)
+    #     instances = list(self.instances)
 
-        m1s = []
-        m2s = []
-        xs = []
-        ys = []
-        for instance in instances:
-            xs.append(instance.params[param_x])
-            ys.append(instance.params[param_y])
-            measures = instance.performance_measures()
-            m1s.append(measures[measure_color])
-            m2s.append(measures[measure_area])
+    #     m1s = []
+    #     m2s = []
+    #     xs = []
+    #     ys = []
+    #     for instance in instances:
+    #         xs.append(instance.params[param_x])
+    #         ys.append(instance.params[param_y])
+    #         measures = instance.performance_measures()
+    #         m1s.append(measures[measure_color])
+    #         m2s.append(measures[measure_area])
 
-        if x_log:
-            plt.xscale('log')
-        if y_log:
-            plt.yscale('log')
+    #     if x_log:
+    #         plt.xscale('log')
+    #     if y_log:
+    #         plt.yscale('log')
 
-        m2s = np.array(m2s)
-        area_normalizer = matplotlib.colors.Normalize(m2s.min(), m2s.max())
-        m2s = area_normalizer(m2s)
-        if reverse_area:
-            m2s = 1 - m2s
+    #     m2s = np.array(m2s)
+    #     area_normalizer = matplotlib.colors.Normalize(m2s.min(), m2s.max())
+    #     m2s = area_normalizer(m2s)
+    #     if reverse_area:
+    #         m2s = 1 - m2s
 
-        plt.scatter(xs, ys, s=m2s * 200, c=m1s, alpha=.5)
-        plt.colorbar(label=measure_color)
-        plt.title('Hyper-parameter tuning results')
-        plt.show()
+    #     plt.scatter(xs, ys, s=m2s * 200, c=m1s, alpha=.5)
+    #     plt.colorbar(label=measure_color)
+    #     plt.title('Hyper-parameter tuning results')
+    #     plt.show()

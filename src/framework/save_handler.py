@@ -15,7 +15,7 @@ try:
 except Exception as e:
     print(e)
 
-db = client.test_algorithm
+db = client.test_algorithm_2
 
 
 def make_binary(object):
@@ -23,20 +23,14 @@ def make_binary(object):
 
 
 class SaveHandler:
-    def __init__(self, algorithm):
+    def __init__(self):
         """
-        Class for saving and loading algorithm instances and results. This
-        class is used by ``Algorithm`` to save and load instances and results.
-
-        Parameters
-        ----------
-         : string
+        Class for saving and loading algorithm instances and results. 
         """
-        self.algorithm = algorithm
 
     def save_instance(self, instance):
         """
-        Save an instance of the algorithm.
+        Save an algorithm instance.
         """
         collection = db['instances']
         algo = instance.algorithm
@@ -47,7 +41,9 @@ class SaveHandler:
                            for key, value in instance.params.items()),
             'hash': instance.hash,
         }
-        collection.insert_one(row)
+        query = {"hash": instance.hash}
+        collection.update_one(query, {"$set": row}, upsert=True)
+        
 
     def add_result(self, instance, result):
         """
@@ -66,7 +62,7 @@ class SaveHandler:
         result_dict['instance_hash'] = instance.hash
         collection.insert_one(result_dict)
 
-    def load_results(self, instance_hash, partial=True):
+    def load_results(self, instance_hash):
         """
         Load all the results of an instance.
 
@@ -85,17 +81,14 @@ class SaveHandler:
             '_id': 0,
             'ret_point': 1,
             'ret_height': 1,
+            'rand_seed': 1,
+            'init_guess': 1,
             'is_success': 1,
             'eval_num': 1,
             'message': 1,
             'create_time': 1,
             'len_points': 1,
         }
-
-        if not partial:
-            projection['points'] = 1
-            projection['trajectory'] = 1
-            projection['heights'] = 1
 
         query_results = collection.find({
             "instance_hash": instance_hash
@@ -107,7 +100,7 @@ class SaveHandler:
             results.add(result)
         return results
 
-    def load_instance(self, instance_hash):
+    def load_instance(self, algorithm, instance_hash):
         """
         Load an instance.
 
@@ -124,14 +117,14 @@ class SaveHandler:
         collection = db['instances']
         row = collection.find_one({'hash': instance_hash})
         instance = AlgorithmInstance(
-            algorithm=self.algorithm,
+            algorithm=algorithm,
             params=row['params'],
             hash=row['hash'],
             save_handler=self,
         )
         return instance
 
-    def get_all_instances(self):
+    def get_all_instances(self, algorithm):
         """
         Get all instances of the algorithm.
 
@@ -142,13 +135,13 @@ class SaveHandler:
 
         collection = db['instances']
         rows = collection.find({
-            'algorithm_name': self.algorithm.name,
-            'algorithm_version': self.algorithm.version,
+            'algorithm_name': algorithm.name,
+            'algorithm_version': algorithm.version,
         })
         instances = []
         for row in rows:
             instances.append(AlgorithmInstance(
-                algorithm=self.algorithm,
+                algorithm=algorithm,
                 params=row['params'],
                 hash=row['hash'],
                 save_handler=self,

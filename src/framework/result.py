@@ -1,7 +1,6 @@
 # from functools import cache
 import nevis
 import numpy as np
-import time
 from .config import MAX_FES, SUCCESS_HEIGHT
 import matplotlib.pyplot as plt
 
@@ -21,14 +20,13 @@ class Result:
     def __init__(self,
                  ret_point,
                  ret_height,
+                 run_index,
                  points=[],
                  message='',
                  heights=None,
-                 distances=None,
                  trajectory=[],
                  is_success=None,
                  eval_num=None,
-                 create_time=None,
                  len_points=None,
                  ):
         """
@@ -46,8 +44,6 @@ class Result:
             A message describes why the algorithm terminated.
         heights : array of float
             The corresponding function values of ``points``.
-        distances : array of float
-            The corresponding distances to Ben Neivs of ``points``.
         trajectory : array of tuple
             Trajectory used in plots.
         """
@@ -58,10 +54,7 @@ class Result:
             self.heights = self.get_heights()
         else:
             self.heights = heights
-        if distances is None:
-            self.distances = self.get_distances()
-        else:
-            self.distances = distances
+
         self.trajectory = np.array(trajectory)
         self.message = message
 
@@ -73,12 +66,8 @@ class Result:
             self.is_success, self.eval_num = self.success_eval()
         else:
             self.is_success, self.eval_num = is_success, eval_num
-
-        if create_time is None:
-            # used as an identifier
-            self.create_time = time.time()
-        else:
-            self.create_time = create_time
+        
+        self.run_index = run_index
 
         if len_points is not None:
             self.len_points = len_points
@@ -152,10 +141,10 @@ class Result:
         nevis.print_result(x, y, self.ret_height)
 
     def __eq__(self, other) -> bool:
-        return self.create_time == other.create_time
+        return self.index == other.index
 
     def __hash__(self) -> int:
-        return int(self.create_time * 1000000)
+        return self.index
 
     @property
     def _plot_labels(self):

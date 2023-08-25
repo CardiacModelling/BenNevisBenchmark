@@ -2,6 +2,7 @@ import nevis
 from functools import wraps
 
 from .result import Result
+from .randomiser import Randomiser
 
 f = nevis.linear_interpolant()
 f_grad = nevis.linear_interpolant(grad=True)
@@ -17,7 +18,7 @@ def optimizer(opt):
         The optimization algorithm to decorate. The function should have the
         following signature:
 
-        def opt(f, x_max, y_max, **kwargs):
+        def opt(f, x_max, y_max, rand_seed, init_guess, **kwargs):
             # MINIMIZE f((x, y)) subject to 0 <= x <= x_max and 0 <= y <= y_max
             # f(u, grad=None) returns the function value at u, and modifies
             # grad in place if grad is not None (as used in nlopt)
@@ -35,7 +36,7 @@ def optimizer(opt):
     """
 
     @wraps(opt)
-    def func(**params):
+    def func(run_index, **params):
         points = []
         function_values = []
 
@@ -52,11 +53,15 @@ def optimizer(opt):
             return -z
 
         x_max, y_max = nevis.dimensions()
+        rand_seed = Randomiser.get_rand_seed(run_index)
+        init_guess = Randomiser.get_init_guess(run_index)
 
         res_dict = opt(
             wrapper,
             x_max,
             y_max,
+            rand_seed,
+            init_guess,
             **params
         )
 
