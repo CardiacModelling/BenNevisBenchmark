@@ -1,5 +1,6 @@
 from functools import cache
 import pprint
+from typing import Any
 import nevis
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,9 +39,25 @@ class AlgorithmInstance:
         self.algorithm = algorithm
         self.instance_index = instance_index
         
-        self.results_patial = False
-        self.results = set()
-        self.load_results()
+        self.results = dict()
+
+    
+    def __call__(self, result_index):
+        if self.results.get(result_index) is not None:
+            return self.results[result_index]
+
+        params = self.algorithm.index_to_params(self.instance_index)
+        rand_seed = Randomiser.get_rand_seed(result_index)
+        init_guess = Randomiser.get_init_guess(result_index)
+        result = self.algorithm.func(rand_seed, init_guess, **params)
+
+        result.info = self.info
+        result.info['result_index'] = result_index
+
+        self.results[result_index] = result
+
+        return result
+
     
     @property
     def info(self):
@@ -53,8 +70,8 @@ class AlgorithmInstance:
     def __eq__(self, other) -> bool:
         return self.info == other.info
 
-    def __hash__(self):
-        return hash(self.algorithm.name + "$" + str(self.algorithm.version) + "$" + str(self.instance_index))
+    # def __hash__(self):
+    #     # return hash(self.algorithm.name + "$" + str(self.algorithm.version) + "$" + str(self.instance_index))
 
     def run(self, save_handler):
         """

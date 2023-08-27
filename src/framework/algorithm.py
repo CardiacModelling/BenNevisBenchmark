@@ -47,11 +47,7 @@ class Algorithm:
         self.param_value_lens = [len(values) for values in self.param_values]
         self.param_space_size = np.prod(self.param_value_lens)
 
-        self.instances = set()
-
-    def __call__(self, run_index: int, instance_index: int):
-        params = self.index_to_params(instance_index)
-        return self.func(run_index, **params)
+        self.instance_indices = set()
     
     def index_to_tuple(self, index):
         result = []
@@ -93,7 +89,7 @@ class Algorithm:
             The index of the instance to be generated.
         """
         instance = AlgorithmInstance(self, instance_index)
-        self.instances.add(instance)
+        self.instance_indices.add(instance_index)
         return instance
 
     def generate_instance_from_params(self, **params) -> AlgorithmInstance:
@@ -109,10 +105,7 @@ class Algorithm:
         return self.generate_instance(instance_index)
 
     def generate_all_instances(self):
-        self.instances = set()
-        for i in range(self.param_space_size):
-            self.instances.add(self.generate_instance(i))
-
+        self.instance_indices = set(range(self.param_space_size))
 
     def generate_random_instance(self, rand_seed=None) -> AlgorithmInstance:
         """
@@ -129,22 +122,14 @@ class Algorithm:
         """
         Load all instances from storage.
         """
-        logging.info(f"Loading instances for algorithm {self.name} ver {self.version}...")
-        instances = save_handler.get_all_instances(self)
-        self.instances.update(instances)
-        logging.info(f'{len(instances)} instances loaded.')
+        # TODO
 
     def load_instance(self, save_handler, instance_index):
         """
         Load an instance.
 
-        Parameters
-        ----------
-        instance_hash : float
-            The hash of the instance to be loaded.
         """
-        instance = save_handler.load_instance(self, instance_index)
-        self.instances.add(instance)
+        # TODO
 
     def tune_params(
         self,

@@ -4,9 +4,9 @@ import numpy as np
 
 
 @optimizer
-def run_mlsl(f, x_max, y_max, population):
+def run_mlsl(f, x_max, y_max, rand_seed, init_guess, population):
     opt = nlopt.opt(nlopt.G_MLSL, 2)
-    nlopt.srand(seed=10)
+    nlopt.srand(seed=rand_seed)
     opt.set_lower_bounds([0, 0])
     opt.set_upper_bounds([x_max, y_max])
     opt.set_min_objective(f)
@@ -21,7 +21,8 @@ def run_mlsl(f, x_max, y_max, population):
     opt.set_xtol_abs(10)
     opt.set_maxeval(MAX_FES)
 
-    x, y = opt.optimize([1, 1])
+    x0, y0 = init_guess
+    x, y = opt.optimize([x0, y0])
     z = opt.last_optimum_value()
 
     return {
@@ -36,5 +37,5 @@ mlsl = Algorithm(
     {
         'population': list(range(1, 31))
     },
-    5
+    1
 )

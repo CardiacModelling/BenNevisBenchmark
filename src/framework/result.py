@@ -17,36 +17,23 @@ x_max, y_max = nevis.dimensions()
 
 
 class Result:
-    def __init__(self,
-                 ret_point,
-                 ret_height,
-                 run_index,
-                 points=[],
-                 message='',
-                 heights=None,
-                 trajectory=[],
-                 is_success=None,
-                 eval_num=None,
-                 len_points=None,
-                 ):
-        """
-        Class for the result of an optimization run.
-
-        Parameters
-        ----------
-        ret_point : tuple
-            The best point (x, y) returned.
-        ret_height : float
-            The height returned.
-        points : array of tuple
-            All points visited during the run.
-        message : string
-            A message describes why the algorithm terminated.
-        heights : array of float
-            The corresponding function values of ``points``.
-        trajectory : array of tuple
-            Trajectory used in plots.
-        """
+    def __init__(
+        self,
+        ret_point,
+        ret_height,
+        points=[],
+        message='',
+        heights=None,
+        trajectory=[],
+        is_success=None,
+        eval_num=None,
+        len_points=None,
+        info=None,
+        algorithm_name=None,
+        algorithm_version=None,
+        instance_index=None,
+        result_index=None,
+    ):
         self.ret_point = ret_point
         self.ret_height = ret_height
         self.points = np.array(points)
@@ -66,13 +53,20 @@ class Result:
             self.is_success, self.eval_num = self.success_eval()
         else:
             self.is_success, self.eval_num = is_success, eval_num
-        
-        self.run_index = run_index
 
         if len_points is not None:
             self.len_points = len_points
         else:
             self.len_points = len(self.points)
+
+        self.info = {
+            'algorithm_name': algorithm_name,
+            'algorithm_version': algorithm_version,
+            'instance_index': instance_index,
+            'result_index': result_index,
+        }
+        if None in self.info.values() and info is not None: 
+            self.info = info
 
     def get_heights(self):
         """Calcuate heights for all visited points."""
@@ -95,31 +89,25 @@ class Result:
         return False, min(MAX_FES, len(self.heights))
 
     def to_dict(self):
-        def to_float_tuple(t):
+        def to_float_list(t):
             x, y = t
-            return float(x), float(y)
-
-        points = [to_float_tuple(point) for point in self.points]
-        trajectory = [to_float_tuple(point) for point in self.trajectory]
-        heights = [float(z) for z in self.heights]
-
-        is_success, eval_num = self.success_eval()
-
+            return [float(x), float(y)]
         return {
-            'points': points,
-            'trajectory': trajectory,
-            'heights': heights,
+            **self.info,
+            # 'algorithm_name': self.info['algorithm_name'],
+            # 'algorithm_version': self.info['algorithm_version'],
+            # 'instance_index': self.info['instance_index'],
+            # 'result_index': self.info['result_index'],
 
-            'ret_point': to_float_tuple(self.ret_point),
+            'ret_point': to_float_list(self.ret_point),
             'ret_height': float(self.ret_height),
             'message': self.message,
-            'create_time': self.create_time,
 
-            'is_success': is_success,
-            'eval_num': eval_num,
-            'len_points': len(points),
-            'max_fes': MAX_FES,
-            'success_height': SUCCESS_HEIGHT,
+            'is_success': self.is_success,
+            'eval_num': self.eval_num,
+            'len_points': self.len_points,
+
+            'info': self.info,
         }
 
     def turn_partial(self):
@@ -135,16 +123,12 @@ class Result:
 
     def print(self):
         """Print a summary of the result."""
-        print(self.create_time)
         print(f'Number of function evals: {len(self.points)}')
         x, y = self.ret_point
         nevis.print_result(x, y, self.ret_height)
 
     def __eq__(self, other) -> bool:
-        return self.index == other.index
-
-    def __hash__(self) -> int:
-        return self.index
+        return self.info == other.info
 
     @property
     def _plot_labels(self):

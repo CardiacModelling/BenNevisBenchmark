@@ -2,7 +2,6 @@ import nevis
 from functools import wraps
 
 from .result import Result
-from .randomiser import Randomiser
 
 f = nevis.linear_interpolant()
 f_grad = nevis.linear_interpolant(grad=True)
@@ -36,7 +35,7 @@ def optimizer(opt):
     """
 
     @wraps(opt)
-    def func(run_index, **params):
+    def func(rand_seed, init_guess, **params):
         points = []
         function_values = []
 
@@ -53,8 +52,6 @@ def optimizer(opt):
             return -z
 
         x_max, y_max = nevis.dimensions()
-        rand_seed = Randomiser.get_rand_seed(run_index)
-        init_guess = Randomiser.get_init_guess(run_index)
 
         res_dict = opt(
             wrapper,

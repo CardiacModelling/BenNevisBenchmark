@@ -1,149 +1,60 @@
-import pickle
 from .algorithm_instance import AlgorithmInstance
 from .result import Result
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from bson.binary import Binary
 from .config import MONGODB_URI
+import logging
 
-# Create a new client and connect to the server
-client = MongoClient(MONGODB_URI, server_api=ServerApi('1'))
-# Send a ping to confirm a successful connection
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
-
-db = client.test_algorithm_2
-
-
-def make_binary(object):
-    return Binary(pickle.dumps(object))
 
 
 class SaveHandler:
-    def __init__(self):
-        """
-        Class for saving and loading algorithm instances and results. 
-        """
-
-    def save_instance(self, instance):
-        """
-        Save an algorithm instance.
-        """
-        collection = db['instances']
-        algo = instance.algorithm
-        row = {
-            'algorithm_name': algo.name,
-            'algorithm_version': algo.version,
-            'params': dict((key, float(value))
-                           for key, value in instance.params.items()),
-            'hash': instance.hash,
-        }
-        query = {"hash": instance.hash}
-        collection.update_one(query, {"$set": row}, upsert=True)
+    def __init__(self, database='test'):
+        # Create a new client and connect to the server
+        self.client = MongoClient(MONGODB_URI, server_api=ServerApi('1'))
+        # Send a ping to confirm a successful connection
+        try:
+            self.client.admin.command('ping')
+            logging.info("Pinged your deployment. You successfully connected to MongoDB!")
+        except Exception as e:
+            logging.exception(e)
+        self.db = self.client[database]
+        self.res_collection = self.db['results']
         
-
-    def add_result(self, instance, result):
-        """
-        Add a result to an instance.
-
-        Parameters
-        ----------
-        instance : AlgorithmInstance
-            The instance to add the result to.
-        result : Result
-            The result to add.
-        """
-
-        collection = db['results']
+    def save_result(self, result):
+        if None in list(result.info.values()):
+            logging.warning('Saving a result with incomplete info!')
         result_dict = result.to_dict()
-        result_dict['instance_hash'] = instance.hash
-        collection.insert_one(result_dict)
+        self.res_collection.update_one(result.info, {"$set": result_dict}, upsert=True)
+    
+    def find_results(self, query):
+        docs = self.res_collection.find(query, {"_id": 0})
+        return [Result(**doc) for doc in docs]
+    
+    def find_instances(self, query):
+        pipeline = [
+            {
+                "$match": query
+            },
+            {
+                "$group": {
+                    "_id": {
+                        "algorithm_name": "$algorithm_name",
+                        "algorithm_version": "$algorithm_version",
+                        "instance_index": "$instance_index"
+                    },
+                    "count": {"$sum": 1},
+                }
+            },
+            {
+                "$replaceRoot": {
+                    "newRoot": {
+                        "algorithm_name": "$_id.algorithm_name",
+                        "algorithm_version": "$_id.algorithm_version",
+                        "instance_index": "$_id.instance_index",
+                        "results_count": "$count",
+                    }
+                }
+            }
+        ]
 
-    def load_results(self, instance_hash):
-        """
-        Load all the results of an instance.
-
-        Parameters
-        ----------
-        instance_hash : int
-            The hash of the instance.
-
-        Returns
-        -------
-        list of Result
-        """
-
-        collection = db['results']
-        projection = {
-            '_id': 0,
-            'ret_point': 1,
-            'ret_height': 1,
-            'rand_seed': 1,
-            'init_guess': 1,
-            'is_success': 1,
-            'eval_num': 1,
-            'message': 1,
-            'create_time': 1,
-            'len_points': 1,
-        }
-
-        query_results = collection.find({
-            "instance_hash": instance_hash
-        }, projection)
-
-        results = set()
-        for row in query_results:
-            result = Result(**row)
-            results.add(result)
-        return results
-
-    def load_instance(self, algorithm, instance_hash):
-        """
-        Load an instance.
-
-        Parameters
-        ----------
-        instance_hash : int
-            The hash of the instance.
-
-        Returns
-        -------
-        AlgorithmInstance
-        """
-
-        collection = db['instances']
-        row = collection.find_one({'hash': instance_hash})
-        instance = AlgorithmInstance(
-            algorithm=algorithm,
-            params=row['params'],
-            hash=row['hash'],
-            save_handler=self,
-        )
-        return instance
-
-    def get_all_instances(self, algorithm):
-        """
-        Get all instances of the algorithm.
-
-        Returns
-        -------
-        list of AlgorithmInstance
-        """
-
-        collection = db['instances']
-        rows = collection.find({
-            'algorithm_name': algorithm.name,
-            'algorithm_version': algorithm.version,
-        })
-        instances = []
-        for row in rows:
-            instances.append(AlgorithmInstance(
-                algorithm=algorithm,
-                params=row['params'],
-                hash=row['hash'],
-                save_handler=self,
-            ))
-        return instances
+        return list(self.res_collection.aggregate(pipeline))
