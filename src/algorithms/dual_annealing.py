@@ -13,10 +13,17 @@ def run_dual_annealing(f, x_max, y_max, **kwargs):
         **kwargs
     )
 
+    def extract_message(message):
+        if type(message) == str:
+            return message
+        if type(message) == list:
+            return '' if not message else message[0]
+        return str(message)
+
     return {
         'x': ret.x,
         'z': ret.fun,
-        'message': ret.message
+        'message': extract_message(ret.message),
     }
 
 
