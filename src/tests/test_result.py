@@ -36,3 +36,11 @@ class TestResult(unittest.TestCase):
         self.assertTrue(result.is_success)
         self.assertEqual(result.eval_num, 49)
         self.assertEqual(result.len_points, 68)
+
+        result.set_info({
+            'algorithm_name': 'Nelder-Mead-test',
+            'algorithm_version': 2023,
+            'instance_index': 4444,
+            'result_index': 1,
+        })
+        self.assertEqual(result.info['instance_index'], 4444)
