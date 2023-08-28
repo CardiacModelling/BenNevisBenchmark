@@ -19,6 +19,7 @@ class SaveHandler:
             logging.exception(e)
         self.db = self.client[database]
         self.res_collection = self.db['results']
+        self.algo_collection = self.db['algorithms']
         
     def save_result(self, result):
         if None in list(result.info.values()):
@@ -58,3 +59,9 @@ class SaveHandler:
         ]
 
         return list(self.res_collection.aggregate(pipeline))
+
+    def save_algorithm(self, algorithm):
+        algorithm_info = {
+            'algorithm_name': algorithm.name,
+            'algorithm_version': algorithm.version,
+        }

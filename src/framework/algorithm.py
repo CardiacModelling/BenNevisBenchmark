@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .algorithm_instance import AlgorithmInstance
 from .save_handler import SaveHandler
-from .config import RS_ITER_NUM
+from .config import RS_ITER_NUM, MAX_INSTANCE_FES
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -104,17 +104,14 @@ class Algorithm:
         instance_index = self.params_to_index(params)
         return self.generate_instance(instance_index)
 
-    def generate_all_instances(self):
-        self.instance_indices = set(range(self.param_space_size))
-
-    def generate_random_instance(self, rand_seed=None) -> AlgorithmInstance:
+    def generate_random_instance(self) -> AlgorithmInstance:
         """
         Generate a random instance of this algorithm by drawing from the
         hyper-parameter space.
         """
-        np.random.seed(rand_seed)
-        i = np.random.randint(0, self.param_space_size)
-        np.random.seed(None)
+        i = 0
+        while i in self.instance_indices:
+            i = np.random.randint(0, self.param_space_size)
         return self.generate_instance(i)
 
 
@@ -136,6 +133,9 @@ class Algorithm:
         iter_num=RS_ITER_NUM,
         measure='ert',
         mode='min',
+        save_handler=None,
+        max_instance_fes=MAX_INSTANCE_FES,
+        rand_seed=None,
     ):
         """
         Hyper-paramter tuning using random search.
@@ -158,27 +158,29 @@ class Algorithm:
         ``measure``.
         """
 
-        instances = list(self.instances)
+        if self.best_instance is not None:
+            best_value = self.best_instance.performance_measures()[measure]
+        else:
+            best_value = float('-inf') if mode == 'max' else float('inf')
 
-        while len(instances) < iter_num:
-            new_instance = self.generate_random_instance()
-            instances.append(new_instance)
-
-        best_value = float('-inf') if mode == 'max' else float('inf')
-
-        for i, current_instance in enumerate(instances[:iter_num], 1):
-            logging.info(f'Calculating instance {i} / {iter_num}')
+        while len(self.instance_indices) < iter_num:
+            logging.info(f'{len(self.instance_indices)} / {iter_num} instances...')
+            np.random.seed(rand_seed)
+            current_instance = self.generate_random_instance()
+            current_instance.run(
+                save_handler=save_handler,
+                restart=True,
+                max_instance_fes=max_instance_fes,
+            )
             current_value = current_instance.performance_measures()[measure]
-
+            logging.debug(current_instance.performance_measures())
             logging.info(f'{measure} = {current_value}')
+            current_instance.make_results_partial()
             if (mode == 'max' and current_value >= best_value)\
                     or (mode == 'min' and current_value <= best_value):
                 best_value = current_value
-                if self.best_instance is not None:
-                    self.best_instance.make_results_partial()
                 self.best_instance = current_instance
-            else:
-                current_instance.make_results_partial()
+            logging.info('===')
 
         return self.best_instance
 

@@ -37,6 +37,12 @@ class Result:
         self.ret_point = ret_point
         self.ret_height = ret_height
         self.points = np.array(points)
+
+        if len_points is not None:
+            self.len_points = len_points
+        else:
+            self.len_points = len(self.points)
+        
         if heights is None:
             self.heights = self.get_heights()
         else:
@@ -54,11 +60,16 @@ class Result:
         else:
             self.is_success, self.eval_num = is_success, eval_num
 
-        if len_points is not None:
-            self.len_points = len_points
-        else:
-            self.len_points = len(self.points)
-
+        self.set_info(info, algorithm_name, algorithm_version, instance_index, result_index)
+    
+    def set_info(
+        self, 
+        info=None,
+        algorithm_name=None,
+        algorithm_version=None,
+        instance_index=None,
+        result_index=None,
+    ):
         self.info = {
             'algorithm_name': algorithm_name,
             'algorithm_version': algorithm_version,
@@ -79,6 +90,9 @@ class Result:
     def success_eval(self):
         """Return a tuple, (is_success, eval_num), indicating if the result is
         succeessful and how many function evaluations it used."""
+        if self.ret_height < SUCCESS_HEIGHT:
+            return False, min(MAX_FES, self.len_points)
+
         for i, h in enumerate(self.heights, 1):
             if i > MAX_FES:
                 break
@@ -86,7 +100,7 @@ class Result:
             if h >= SUCCESS_HEIGHT:
                 return True, i
 
-        return False, min(MAX_FES, len(self.heights))
+        return False, min(MAX_FES, self.len_points)
 
     def to_dict(self):
         def to_float_list(t):
@@ -109,11 +123,6 @@ class Result:
 
             'info': self.info,
         }
-
-    def turn_partial(self):
-        self.points = np.array([])
-        self.heights = np.array([])
-        self.distances = np.array([])
 
     @property
     def ret_distance(self):

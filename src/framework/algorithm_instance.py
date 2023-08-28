@@ -1,12 +1,10 @@
 from functools import cache
 import pprint
-from typing import Any
 import nevis
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from .config import MAX_FES, RUN_NUM, MAX_INSTANCE_FES
-import time
 from tqdm import tqdm
 import logging
 from .randomiser import Randomiser
@@ -39,26 +37,9 @@ class AlgorithmInstance:
         self.algorithm = algorithm
         self.instance_index = instance_index
         
-        self.results = dict()
+        self.results = []
+        self.results_patial = False
 
-    
-    def __call__(self, result_index):
-        if self.results.get(result_index) is not None:
-            return self.results[result_index]
-
-        params = self.algorithm.index_to_params(self.instance_index)
-        rand_seed = Randomiser.get_rand_seed(result_index)
-        init_guess = Randomiser.get_init_guess(result_index)
-        result = self.algorithm.func(rand_seed, init_guess, **params)
-
-        result.info = self.info
-        result.info['result_index'] = result_index
-
-        self.results[result_index] = result
-
-        return result
-
-    
     @property
     def info(self):
         return {
@@ -66,54 +47,63 @@ class AlgorithmInstance:
             'algorithm_version': self.algorithm.version,
             'instance_index': self.instance_index,
         }
+    
+    @property
+    def params(self):
+        return self.algorithm.index_to_params(self.instance_index)
+    
+    def __call__(self, result_index):
+        rand_seed = Randomiser.get_rand_seed(result_index)
+        init_guess = Randomiser.get_init_guess(result_index)
+        result = self.algorithm.func(rand_seed, init_guess, **self.params)
+        result.set_info({**self.info, 'result_index': result_index})
+        return result
+    
+    def run_next(self):
+        result_index = len(self.results)
+        logging.debug(f'Running #{result_index} of instance {self.instance_index}...')
+        result = self(result_index)
+        logging.debug(f'Eval num: {result.eval_num}, height: {result.ret_height}')
+        self.results.append(result)
+        return result
 
     def __eq__(self, other) -> bool:
         return self.info == other.info
 
-    # def __hash__(self):
-    #     # return hash(self.algorithm.name + "$" + str(self.algorithm.version) + "$" + str(self.instance_index))
-
-    def run(self, save_handler):
+    def run(self, save_handler=None, max_instance_fes=MAX_INSTANCE_FES, restart=False):
         """
         Run this instance and save all results.
         """
 
-        save_handler.save_instance(self)
-
+        if restart:
+            self.results = []
+            self.results_patial = False
+        
         current_instance_fes = 0
         for result in self.results:
             current_instance_fes += result.eval_num
-        
-        if current_instance_fes >= MAX_INSTANCE_FES:
-            return
 
-        logging.info(f'Running instance {self.hash}')
+        logging.info(f'Running instance {self.instance_index}')
         logging.info(pprint.pformat(self.info))
-        logging.debug(f'Current instance fes: {current_instance_fes}')
 
-        while current_instance_fes < MAX_INSTANCE_FES:
-            run_index = len(self.results)
-            logging.debug(f'Running instance {self.hash} #{run_index}')
-
-            result = self.algorithm(run_index, self.instance_index)
-            self.results.add(result)
+        while current_instance_fes < max_instance_fes:
+            logging.debug(f'Current instance fes: {current_instance_fes}')
+            result = self.run_next()
             current_instance_fes += result.eval_num
-
-            save_handler.add_result(self, result)
+            if save_handler is not None:
+                save_handler.save_result(result)
 
     def make_results_partial(self):
         for result in self.results:
-            result.turn_partial()
-
-    def fetch_full_results(self):
-        if self.results_patial:
-            self.load_results(False)
+            result.points = np.array([])
+            result.heights = np.array([])
+            result.trajectory = np.array([])
+        self.results_patial = True
 
     def load_results(self, save_handler):
         """Load all results saved for this instance."""
-        results = save_handler.load_results(self.hash)
-        self.results = results
-        if results:
+        self.results = save_handler.find_results(self.info)
+        if self.results:
             self.results_patial = True
 
     def performance_measures(self):
@@ -140,7 +130,7 @@ class AlgorithmInstance:
             - 'sp': The success performance.
         """
 
-        results = list(self.results)
+        results = self.results
         run_num = len(results)
 
         success_evals = []
@@ -168,7 +158,7 @@ class AlgorithmInstance:
                 'hv': 0,
                 'par2': float('inf'),
                 'par10':  float('inf'),
-                'avg_height': 0,
+                'avg_height': np.mean(ret_heights),
                 'ert': float('inf'),
                 'sp': float('inf'),
                 'ert_std': float('inf'),
@@ -241,7 +231,6 @@ class AlgorithmInstance:
 
     def print_results(self):
         """Print all results of this instance."""
-        self.fetch_full_results()
 
         pprint(self.performance_measures())
         for i, result in enumerate(self.results):
@@ -302,16 +291,16 @@ class AlgorithmInstance:
             Downsampling factor on number of function evaluations.
         """
 
-        self.fetch_full_results()
+        assert not self.results_patial, "Results must be fully loaded."
 
         def calc(values_list, method):
-            random_results = []
+            results = []
             for values in values_list:
                 prefix = (np.maximum if method ==
                           'max' else np.minimum).accumulate(values)
-                random_results.append(prefix)
+                results.append(prefix)
 
-            temp = np.array(random_results).T
+            temp = np.array(results).T
 
             re_mean = []
             re_0 = []
@@ -386,7 +375,7 @@ class AlgorithmInstance:
     def plot_stacked_graph(self):
         """Plot a stacked graph for all instances."""
 
-        self.fetch_full_results()
+        assert not self.results_patial, "Results must be fully loaded."
 
         function_values = pad_list([result.heights for result in self.results])
 
