@@ -100,7 +100,7 @@ class AlgorithmInstance:
             result.trajectory = np.array([])
         self.results_patial = True
 
-    def load_results(self, save_handler):
+    def load_parital_results(self, save_handler):
         """Load all results saved for this instance."""
         self.results = save_handler.find_results(self.info)
         if self.results:
@@ -161,15 +161,15 @@ class AlgorithmInstance:
                 'avg_height': np.mean(ret_heights),
                 'ert': float('inf'),
                 'sp': float('inf'),
-                'ert_std': float('inf'),
+                # 'ert_std': float('inf'),
                 'success_rate_upper': 0,
                 'success_rate_lower': 0,
                 'success_rate_length': 0,
             }
 
-        success_eval_var = np.var(success_evals, ddof=1)
-        failed_eval_var = np.var(failed_evals, ddof=1)
-        avg_failed_eval_sqr = np.mean(np.square(failed_evals))
+        # success_eval_var = np.var(success_evals, ddof=1)
+        # failed_eval_var = np.var(failed_evals, ddof=1)
+        # avg_failed_eval_sqr = np.mean(np.square(failed_evals))
 
         success_rate = success_cnt / run_num
         avg_success_eval = np.mean(success_evals)
@@ -195,10 +195,10 @@ class AlgorithmInstance:
                 (1 - success_rate) / success_rate * avg_failed_eval
             ),
             'sp': avg_success_eval / success_rate,
-            'ert_std': np.sqrt(
-                (1 - success_rate) / success_rate * failed_eval_var + (
-                    (1-success_rate) / (success_rate**2) * avg_failed_eval_sqr
-                ) + success_eval_var),
+            # 'ert_std': np.sqrt(
+            #     (1 - success_rate) / success_rate * failed_eval_var + (
+            #         (1-success_rate) / (success_rate**2) * avg_failed_eval_sqr
+            #     ) + success_eval_var),
             'success_rate_upper': center + radius,
             'success_rate_lower': center - radius,
             'success_rate_length': radius * 2,
@@ -281,7 +281,7 @@ class AlgorithmInstance:
 
     #     plt.show()
 
-    def plot_convergence_graph(self, downsampling=1):
+    def plot_convergence_graph(self, downsampling=1, img_path=None):
         """
         Plot a convergence graph across all instances.
 
@@ -370,9 +370,9 @@ class AlgorithmInstance:
         ax2.set_ylabel('Distance to Ben Nevis')
         ax2.set_ylim(10, 2e6)
 
-        plt.show()
-
-    def plot_stacked_graph(self):
+        plt.savefig(img_path) if img_path else plt.show()
+        
+    def plot_stacked_graph(self, img_path=None):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
@@ -458,4 +458,5 @@ class AlgorithmInstance:
             ))
         fig.tight_layout()
         fig.subplots_adjust(right=0.75)
-        plt.show()
+        
+        plt.savefig(img_path) if img_path else plt.show()

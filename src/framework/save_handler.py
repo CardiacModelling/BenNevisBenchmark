@@ -20,6 +20,10 @@ class SaveHandler:
         self.db = self.client[database]
         self.res_collection = self.db['results']
         self.algo_collection = self.db['algorithms']
+        self.database = database
+    
+    def drop_database(self):
+        self.client.drop_database(self.database)
         
     def save_result(self, result):
         if None in list(result.info.values()):
@@ -60,8 +64,23 @@ class SaveHandler:
 
         return list(self.res_collection.aggregate(pipeline))
 
-    def save_algorithm(self, algorithm):
-        algorithm_info = {
-            'algorithm_name': algorithm.name,
-            'algorithm_version': algorithm.version,
-        }
+    def save_algorithm_best_instance(self, algorithm):
+        self.algo_collection.update_one(
+            algorithm.info,
+            {"$set": {
+                **algorithm.info, 
+                'best_instance_index': algorithm.best_instance_index,
+            }},
+            upsert=True,
+        )
+    
+    def load_algorithm_best_instance(self, algorithm):
+        doc = self.algo_collection.find_one(algorithm.info)
+        if doc is None or doc['best_instance_index'] == -1: 
+            return
+        algorithm.best_instance_index = doc['best_instance_index']
+        algorithm.best_instance = algorithm.generate_instance(algorithm.best_instance_index)
+
+    def load_algorithm_instance_indices(self, algorithm):
+        res = self.find_instances(algorithm.info)
+        algorithm.instance_indices = set([ins['instance_index'] for ins in res])

@@ -83,9 +83,11 @@ class Result:
         """Calcuate heights for all visited points."""
         return np.array([f(*p) for p in self.points])
 
-    def get_distances(self):
+    @property
+    def distances(self):
         """Calcuate distances to Ben Nevis for all visited points."""
         return np.array([_dist_to_ben(*p) for p in self.points])
+
 
     def success_eval(self):
         """Return a tuple, (is_success, eval_num), indicating if the result is

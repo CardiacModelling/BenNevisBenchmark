@@ -1,7 +1,7 @@
 import nevis
 import numpy as np
 from scipy.optimize import minimize
-from framework import Result, MAX_FES
+from framework import Result, MAX_FES, SUCCESS_HEIGHT
 from framework import optimizer
 import scipy.optimize
 import nlopt
@@ -85,6 +85,7 @@ def run_mlsl(
     opt.set_lower_bounds([0, 0])
     opt.set_upper_bounds([x_max, y_max])
     opt.set_min_objective(f)
+    opt.set_stopval(-SUCCESS_HEIGHT)
 
     local_opt = nlopt.opt(nlopt.LN_NELDERMEAD, 2)
     local_opt.set_ftol_abs(0.2)
@@ -94,7 +95,7 @@ def run_mlsl(
     opt.set_population(int(population))
     opt.set_ftol_abs(0.2)
     opt.set_xtol_abs(10)
-    opt.set_maxeval(20_000)
+    opt.set_maxeval(10_000)
 
     x0, y0 = init_guess
     x, y = opt.optimize([x0, y0])

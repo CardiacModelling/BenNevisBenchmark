@@ -1,14 +1,22 @@
 import unittest
-from framework import optimizer, MAX_FES, Result, Algorithm
+from framework import optimizer, MAX_FES, Result, Algorithm, SaveHandler
 import scipy.optimize
 import logging
 import numpy as np
 from pympler import asizeof
 import nlopt
 from util import run_dual_annealing, run_mlsl
+import filecmp
+import os
 
 
 class TestRunner(unittest.TestCase):
+    def setUp(self) -> None:
+        self.save_handler = SaveHandler('unittest2')
+    
+    def tearDown(self) -> None:
+        self.save_handler.drop_database()
+
     def test_optimizer(self):
         rand_seed = 100
         init_guess = [5000, 5000]
@@ -57,14 +65,15 @@ class TestRunner(unittest.TestCase):
             algo.params_to_index(algo.index_to_params(34)),
         )
 
-        ins_1 = algo.generate_instance(23)
+        instance_index = 23
+        ins_1 = algo.generate_instance(instance_index)
         self.assertEqual(ins_1.info, {
             'algorithm_name': algo_name,
             'algorithm_version': algo_version,
             'instance_index': 23,
         })
 
-        params_2 = algo.index_to_params(23)
+        params_2 = algo.index_to_params(instance_index)
         self.assertEqual(
             params_2,
             {'maxiter': 1000, 'initial_temp': 10000, 'restart_temp_ratio': 0.4},
@@ -73,10 +82,11 @@ class TestRunner(unittest.TestCase):
 
         # The two methods of generating instances are equivalent
         self.assertEqual(ins_1, ins_2)
-        self.assertEqual(list(algo.instance_indices), [23])
+        self.assertEqual(list(algo.instance_indices), [instance_index])
 
-        res_1 = ins_1(88)
-        res_2 = ins_1(88)
+        result_index = 88
+        res_1 = ins_1(result_index)
+        res_2 = ins_1(result_index)
         # The runs are not random when the index is fixed
         self.assertEqual(res_1.to_dict(), res_2.to_dict())
 
@@ -93,7 +103,7 @@ class TestRunner(unittest.TestCase):
                 self.assertGreaterEqual(s, max_instance_fes)
 
         measures = ins_1.performance_measures()
-        self.assertAlmostEqual(measures['success_rate'], 0)
+        self.assertAlmostEqual(measures['success_rate'], 0.25)
 
         size_full = asizeof.asizeof(ins_1)
         ins_1.make_results_partial()
@@ -114,20 +124,68 @@ class TestRunner(unittest.TestCase):
         )
         algo.tune_params(
             iter_num=3,
-            max_instance_fes=80_000,
-            measure='avg_height',
-            mode='max',
+            max_instance_fes=30_000,
             rand_seed=566,
+            save_handler=self.save_handler,
         )
 
         ins = algo.best_instance
 
-        self.assertEqual(ins.params['population'], 9)
+        self.assertEqual(ins.params['population'], 1)
+        measures_1 = ins.performance_measures()
+        self.assertTrue(ins.results_patial)
 
-        # print('%%%')
-        # print(ins.params)
-        # print(ins.info)
-        # print(ins.performance_measures())
+        ins.run(restart=True, max_instance_fes=30_000)
+        self.assertFalse(ins.results_patial)
+
+        measures_2 = ins.performance_measures()
+        self.assertEqual(measures_1, measures_2)
+
+        ins.plot_convergence_graph(img_path='/tmp/convergence-graph.png')
+        ins.plot_stacked_graph(img_path='/tmp/stacked-graph.png')
+
+        # Mimic when we start the programme again
+        algo2 = Algorithm(
+            name=algo_name, 
+            version=algo_version,
+            param_space={
+                'population': list(range(1, 30))
+            },
+            func=run_mlsl,
+        )
+
+        # Loading the best instance of an algorithm
+        algo2.load_best_instance(save_handler=self.save_handler)
+        ins2 = algo2.best_instance
+        self.assertEqual(ins.params, ins2.params)
+        self.assertEqual(ins.info, ins2.info)
+
+        # Loading all instance indices
+        algo2.load_instance_indices(save_handler=self.save_handler)
+        self.assertEqual(algo.instance_indices, algo2.instance_indices)
+
+        # Load the results for a single instance
+        ins2.load_parital_results(save_handler=self.save_handler)
+        self.assertEqual(len(ins2.results), len(ins.results))
+        for res, res2 in zip(ins.results, ins2.results):
+            self.assertEqual(res.to_dict(), res2.to_dict())
+        
+        ins2.run(restart=True, max_instance_fes=30_000)
+
+        ins2.plot_convergence_graph(img_path='/tmp/convergence-graph-2.png')
+        ins2.plot_stacked_graph(img_path='/tmp/stacked-graph-2.png')
+
+        self.assertTrue(filecmp.cmp(
+            '/tmp/convergence-graph.png',
+            '/tmp/convergence-graph-2.png',
+            shallow=False,
+        ))
+
+        self.assertTrue(filecmp.cmp(
+            '/tmp/stacked-graph.png',
+            '/tmp/stacked-graph-2.png',
+            shallow=False,
+        ))
 
 
 

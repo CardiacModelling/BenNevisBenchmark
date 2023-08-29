@@ -1,11 +1,9 @@
 import unittest
-from framework import Result
+from framework import Result, SUCCESS_HEIGHT
 from util import run_sample_opt
 import logging
 import nevis
 import numpy as np
-
-# logging.basicConfig(level=logging.DEBUG)
 
 
 class TestResult(unittest.TestCase):
@@ -34,7 +32,10 @@ class TestResult(unittest.TestCase):
         # logging.debug(heights)
         # logging.debug((x, y))
         self.assertTrue(result.is_success)
-        self.assertEqual(result.eval_num, 49)
+        if SUCCESS_HEIGHT == 1344:
+            self.assertEqual(result.eval_num, 49)
+        elif SUCCESS_HEIGHT == 1340:
+            self.assertEqual(result.eval_num, 34)
         self.assertEqual(result.len_points, 68)
 
         result.set_info({

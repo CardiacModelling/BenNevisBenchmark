@@ -40,6 +40,7 @@ class Algorithm:
         self.func = func
         self.version = version
         self.best_instance = None
+        self.best_instance_index = -1
 
         self.param_space = param_space
         self.param_keys = list(param_space.keys())
@@ -48,6 +49,13 @@ class Algorithm:
         self.param_space_size = np.prod(self.param_value_lens)
 
         self.instance_indices = set()
+    
+    @property
+    def info(self):
+        return {
+            'algorithm_name': self.name,
+            'algorithm_version': self.version,
+        }
     
     def index_to_tuple(self, index):
         result = []
@@ -113,20 +121,18 @@ class Algorithm:
         while i in self.instance_indices:
             i = np.random.randint(0, self.param_space_size)
         return self.generate_instance(i)
-
-
-    def load_instances(self, save_handler):
-        """
-        Load all instances from storage.
-        """
-        # TODO
-
-    def load_instance(self, save_handler, instance_index):
-        """
-        Load an instance.
-
-        """
-        # TODO
+    
+    def save_best_instance(self, save_handler=None):
+        if save_handler is not None:
+            save_handler.save_algorithm_best_instance(self)
+    
+    def load_best_instance(self, save_handler=None):
+        if save_handler is not None:
+            save_handler.load_algorithm_best_instance(self)
+    
+    def load_instance_indices(self, save_handler=None):
+        if save_handler is not None:
+            save_handler.load_algorithm_instance_indices(self)
 
     def tune_params(
         self,
@@ -180,6 +186,8 @@ class Algorithm:
                     or (mode == 'min' and current_value <= best_value):
                 best_value = current_value
                 self.best_instance = current_instance
+                self.best_instance_index = current_instance.instance_index
+                self.save_best_instance(save_handler=save_handler)
             logging.info('===')
 
         return self.best_instance

@@ -4,11 +4,10 @@ from util import make_result
 
 class TestSave(unittest.TestCase):
     def setUp(self) -> None:
-        self.db_name = "unittest"
-        self.save_handler = SaveHandler(self.db_name)
+        self.save_handler = SaveHandler("unittest")
     
     def tearDown(self) -> None:
-        self.save_handler.client.drop_database(self.db_name)
+        self.save_handler.drop_database()
     
     def test_save_result(self):
         result = make_result(
