@@ -10,16 +10,29 @@ import logging
 from .randomiser import Randomiser
 
 
-def pad_list(ls):
+def pad_list(ls, mode='last'):
     """Making each list of the input list of lists have the same length, by
     padding with the last element of each list."""
     if not ls:
         return []
     length = max(len(lst) for lst in ls)
-    return [
-        np.append(lst, [lst[-1]] * (length - len(lst)))
-        for lst in ls
-    ]
+    if mode == 'last':
+        return [
+            np.append(lst, [lst[-1]] * (length - len(lst)))
+            for lst in ls
+        ]
+    elif mode == 'terminate':
+        return [
+            np.append(lst, [1500] * (length - len(lst)))
+            for lst in ls
+        ]
+    elif mode == 'judge':
+        return [
+            np.append(lst, [lst[-1] if 1340 <= lst[-1] < 1350 else 1500] * (length - len(lst)))
+            for lst in ls
+        ]
+    else:
+        raise ValueError('Unknown mode.')
 
 
 class AlgorithmInstance:
@@ -377,27 +390,51 @@ class AlgorithmInstance:
         ax2.set_ylabel('Distance to Ben Nevis')
         ax2.set_ylim(10, 2e6)
 
-        plt.savefig(img_path) if img_path else plt.show()
+        plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
         
-    def plot_stacked_graph(self, img_path=None, excluding_first=True):
+    def plot_stacked_graph(self, img_path=None, excluding_first=True, mode='last'):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
 
         start_idx = 1 if excluding_first else 0
-        function_values = pad_list([result.heights for result in self.results[start_idx:]])
-
-        height_bins = [1000, 1100, 1150, 1215, 1235, 1297, 1310, 1340, 1350]
+        function_values = pad_list([result.heights for result in self.results[start_idx:]], mode=mode)
+        # $[0, 600)$ & Lowland areas\\
+        # $[600, 1000)$ & Mountainous areas\\
+        # $[1000, 1100)$ & Approximately top 135 Munros \& 5 Welsh `Furths' \\
+        # $[1100, 1150)$ & Approximately top 50 Munros \\ 
+        # $[1150, 1215)$ & Approximately top 25 Munros \\
+        # $[1215, 1235)$ & Wider Ben Nevis Massif (top 9 Munros) \\ % 1 point
+        # $[1235, 1297)$ & Caringorm Plateau (top 6 Munros) \\ % 2 points
+        # $[1297, 1310)$ & Ben Macdui (2nd highest Munro) \\ % 3 points
+        # $[1310, 1340)$ & On Ben Nevis but not quite at the summit \\ % 7 points
+        # $[1340, 1345)$ & Ben Nevis (highest Munro) \\ % 10 points
+        # each value reprents the upper bound of an interval
+        height_bins = [
+            600,
+            1000,
+            1100,
+            1150,
+            1215,
+            1235,
+            1297,
+            1310,
+            1340,
+            1350,
+            2000,
+        ]
         height_labels = [
-            '',
-            '',
-            '~ top 50 Munros',
-            '~ top 25 Monros',
-            'Ben Nevis Massif (top 9 Munros)',
+            'Lowland areas',
+            'Mountainous areas',
+            'Approximately top 135 Munros & 5 Welsh \'Furths\'',
+            'Approximately top 50 Munros',
+            'Approximately top 25 Munros',
+            'Wider Ben Nevis Massif (top 9 Munros)',
             'Caringorm Plateau (top 6 Munros)',
             'Ben Macdui (2nd highest Munro)',
-            'Very close to Ben Nevis',
+            'On Ben Nevis but not quite at the summit',
             'Ben Nevis (highest Munro)',
+            '(Terminated)'
         ]
 
         def get_cat(h):
@@ -436,35 +473,44 @@ class AlgorithmInstance:
         for i, height in enumerate(height_bins):
             cnts = group_cnts[i]
 
+            low = height_bins[i - 1] if i > 0 else 0
+            high = height
+
+            if height_labels[i] != '(Terminated)':
+                label = f'{low}m - {high}m\n{height_labels[i]}'
+                color = index_to_color(i)
+            else:
+                label = '(Terminated)'
+                color = (1, 1, 1, 1)
+            
             ax.fill_between(
                 range(len(cnts)),
                 group_cnts[i - 1] if i > 0 else [0] * len(cnts),
                 group_cnts[i],
-                color=index_to_color(i)
+                color=color,
             )
 
-            low = height_bins[i - 1] if i > 0 else 0
-            high = height
 
             legend_elements.append(
                 Patch(
-                    color=index_to_color(i),
-                    label=f'{low}m - {high}m {height_labels[i]}'
+                    color=color,
+                    label=label,
                 )
             )
 
         fig.legend(
             handles=legend_elements[::-1],
-            loc=7,
+            loc='upper left',
+            bbox_to_anchor=(1, 0.9) 
         )
 
         fig.suptitle(
-            'Number of runs reaching a certain height at each function '
+            'Number of runs reaching height levels at each function\n'
             'evaluation for {} runs of {}'.format(
                 len(self.results),
                 self.algorithm.name
             ))
-        fig.tight_layout()
-        fig.subplots_adjust(right=0.75)
-        
-        plt.savefig(img_path) if img_path else plt.show()
+
+        ax.set_xlabel('Number of function evals')
+        ax.set_ylabel('Number of runs')
+        plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
