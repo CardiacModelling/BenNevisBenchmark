@@ -104,6 +104,7 @@ class TestRunner(unittest.TestCase):
 
         measures = ins_1.performance_measures()
         self.assertAlmostEqual(measures['success_rate'], 0.25)
+        self.assertTrue('gary_ert' in measures.keys())
 
         size_full = asizeof.asizeof(ins_1)
         ins_1.make_results_partial()

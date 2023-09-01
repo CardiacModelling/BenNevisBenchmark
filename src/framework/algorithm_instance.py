@@ -106,7 +106,7 @@ class AlgorithmInstance:
         if self.results:
             self.results_patial = True
 
-    def performance_measures(self):
+    def performance_measures(self, excluding_first=False):
         """
         Return all the performance measures of the instance. It's safe to run this
         method if even the results are ``partial''.
@@ -130,20 +130,22 @@ class AlgorithmInstance:
             - 'sp': The success performance.
         """
 
-        results = self.results
+        results = self.results if not excluding_first else self.results[1:]
         run_num = len(results)
 
         success_evals = []
         failed_evals = []
         ret_heights = []
+
+        gary_score_sum = 0
         for result in results:
             is_success, eval_cnt = result.is_success, result.eval_num
             if is_success:
                 success_evals.append(eval_cnt)
             else:
                 failed_evals.append(eval_cnt)
-
             ret_heights.append(result.ret_height)
+            gary_score_sum += result.gary_score
 
         success_cnt = len(success_evals)
         success_eval_cnt = sum(success_evals)
@@ -165,6 +167,8 @@ class AlgorithmInstance:
                 'success_rate_upper': 0,
                 'success_rate_lower': 0,
                 'success_rate_length': 0,
+
+                'gary_ert': float('inf'),
             }
 
         # success_eval_var = np.var(success_evals, ddof=1)
@@ -202,6 +206,8 @@ class AlgorithmInstance:
             'success_rate_upper': center + radius,
             'success_rate_lower': center - radius,
             'success_rate_length': radius * 2,
+            
+            'gary_ert': (np.sum(success_evals) + np.sum(failed_evals)) / gary_score_sum,
         }
 
     # def plot_measure_by_runs(self, measures=['ert'], max_run_num=RUN_NUM):
@@ -281,7 +287,7 @@ class AlgorithmInstance:
 
     #     plt.show()
 
-    def plot_convergence_graph(self, downsampling=1, img_path=None):
+    def plot_convergence_graph(self, downsampling=1, img_path=None, excluding_first=True):
         """
         Plot a convergence graph across all instances.
 
@@ -319,8 +325,9 @@ class AlgorithmInstance:
 
             return re_mean, re_0, re_25, re_50, re_75, re_100
 
-        function_values = [result.heights for result in self.results]
-        distance_values = [result.distances for result in self.results]
+        start_idx = 1 if excluding_first else 0
+        function_values = [result.heights for result in self.results[start_idx:]]
+        distance_values = [result.distances for result in self.results[start_idx:]]
 
         function_values = pad_list(function_values)
 
@@ -372,12 +379,13 @@ class AlgorithmInstance:
 
         plt.savefig(img_path) if img_path else plt.show()
         
-    def plot_stacked_graph(self, img_path=None):
+    def plot_stacked_graph(self, img_path=None, excluding_first=True):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
 
-        function_values = pad_list([result.heights for result in self.results])
+        start_idx = 1 if excluding_first else 0
+        function_values = pad_list([result.heights for result in self.results[start_idx:]])
 
         height_bins = [1000, 1100, 1150, 1215, 1235, 1297, 1310, 1340, 1350]
         height_labels = [

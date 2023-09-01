@@ -1,5 +1,5 @@
 import os
-from .config import MAX_FES, SUCCESS_HEIGHT, RS_ITER_NUM, RUN_NUM
+from .config import MAX_FES, SUCCESS_HEIGHT, RS_ITER_NUM, RUN_NUM, XTOL, FTOL
 from .result import Result
 from .save_handler import SaveHandler
 from .algorithm_instance import AlgorithmInstance
@@ -14,6 +14,8 @@ __all__ = [
     'SUCCESS_HEIGHT',
     'RS_ITER_NUM',
     'RUN_NUM',
+    'XTOL',
+    'FTOL',
     'Result',
     'SaveHandler',
     'AlgorithmInstance',

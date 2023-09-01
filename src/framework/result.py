@@ -1,7 +1,7 @@
 # from functools import cache
 import nevis
 import numpy as np
-from .config import MAX_FES, SUCCESS_HEIGHT
+from .config import MAX_FES, SUCCESS_HEIGHT, GARY_SCORE_CONFIG
 import matplotlib.pyplot as plt
 
 f = nevis.linear_interpolant()
@@ -26,6 +26,7 @@ class Result:
         heights=None,
         trajectory=[],
         is_success=None,
+        gary_score=None,
         eval_num=None,
         len_points=None,
         info=None,
@@ -56,9 +57,9 @@ class Result:
                 'A partial result must have `is_success` and `eval_num`'
 
         if is_success is None:
-            self.is_success, self.eval_num = self.success_eval()
+            self.is_success, self.eval_num, self.gary_score = self.success_eval()
         else:
-            self.is_success, self.eval_num = is_success, eval_num
+            self.is_success, self.eval_num, self.gary_score = is_success, eval_num, gary_score
 
         self.set_info(info, algorithm_name, algorithm_version, instance_index, result_index)
     
@@ -90,20 +91,30 @@ class Result:
 
 
     def success_eval(self):
-        """Return a tuple, (is_success, eval_num), indicating if the result is
+        """Return a tuple, (is_success, eval_num, gary_score), indicating if the result is
         succeessful and how many function evaluations it used."""
-        if self.ret_height < SUCCESS_HEIGHT:
-            return False, min(MAX_FES, self.len_points)
 
+        # if self.ret_height < SUCCESS_HEIGHT:
+        #     return False, min(MAX_FES, self.len_points)
+
+        max_height = 0
         for i, h in enumerate(self.heights, 1):
             if i > MAX_FES:
                 break
-
+            max_height = max(h, max_height)
             if h >= SUCCESS_HEIGHT:
-                return True, i
+                return True, i, 10
+        
+        gary_score = 0
+        for g_h, g_p in GARY_SCORE_CONFIG:
+            if max_height >= g_h:
+                gary_score = g_p
+                break
 
-        return False, min(MAX_FES, self.len_points)
+        return False, min(MAX_FES, self.len_points), gary_score
 
+    def __repr__(self) -> str:
+        return str(self.to_dict())
     def to_dict(self):
         def to_float_list(t):
             x, y = t
@@ -122,6 +133,7 @@ class Result:
             'is_success': self.is_success,
             'eval_num': self.eval_num,
             'len_points': self.len_points,
+            'gary_score': self.gary_score,
 
             'info': self.info,
         }

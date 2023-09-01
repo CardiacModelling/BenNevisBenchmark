@@ -137,7 +137,7 @@ class Algorithm:
     def tune_params(
         self,
         iter_num=RS_ITER_NUM,
-        measure='ert',
+        measure='gary_ert',
         mode='min',
         save_handler=None,
         max_instance_fes=MAX_INSTANCE_FES,
@@ -169,8 +169,9 @@ class Algorithm:
         else:
             best_value = float('-inf') if mode == 'max' else float('inf')
 
-        while len(self.instance_indices) < iter_num:
-            logging.info(f'{len(self.instance_indices)} / {iter_num} instances...')
+        n = min(iter_num, self.param_space_size)
+        while len(self.instance_indices) < n:
+            logging.info(f'{len(self.instance_indices)} / {n} instances...')
             np.random.seed(rand_seed)
             current_instance = self.generate_random_instance()
             current_instance.run(
