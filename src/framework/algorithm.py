@@ -174,6 +174,7 @@ class Algorithm:
             logging.info(f'{len(self.instance_indices)} / {n} instances...')
             np.random.seed(rand_seed)
             current_instance = self.generate_random_instance()
+            logging.debug(current_instance.params)
             current_instance.run(
                 save_handler=save_handler,
                 restart=True,
