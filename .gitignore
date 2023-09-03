@@ -164,7 +164,7 @@ result/
 saved/
 saved-old/
 
-*.txt
+# *.txt
 *.pkl
 basin/
 
