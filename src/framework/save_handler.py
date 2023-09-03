@@ -21,7 +21,9 @@ class SaveHandler:
         self.database = database
     
     def drop_database(self):
-        self.client.drop_database(self.database)
+        # self.client.drop_database(self.database)
+        self.res_collection.drop()
+        self.algo_collection.drop()
         
     def save_result(self, result):
         if None in list(result.info.values()):
