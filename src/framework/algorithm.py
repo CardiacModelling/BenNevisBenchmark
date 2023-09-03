@@ -188,6 +188,10 @@ class Algorithm:
                 self.save_best_instance(save_handler=save_handler)
             logger.info('===')
 
+        logger.info(f'Best instance selected for {self.name}:')
+        logger.info(self.best_instance.info)
+        logger.info(self.best_instance.params)
+        logger.info(self.best_instance.performance_measures(excluding_first=True))
         return self.best_instance
 
     # def plot_two_measures(self,

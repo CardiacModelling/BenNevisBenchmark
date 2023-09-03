@@ -160,6 +160,7 @@ class TestRunner(unittest.TestCase):
         ins2 = algo2.best_instance
         self.assertEqual(ins.params, ins2.params)
         self.assertEqual(ins.info, ins2.info)
+        self.assertEqual(ins.performance_measures(), ins2.performance_measures())
 
         # Loading all instance indices
         algo2.load_instance_indices(save_handler=self.save_handler)
