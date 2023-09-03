@@ -1,7 +1,21 @@
 from dotenv import load_dotenv
 import os
+import logging
 load_dotenv()
 
+def setup_logging():
+    logger = logging.getLogger("framework")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler("framework.log")
+    # Create a formatter to define the log message format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    # Add the handler to the logger
+    logger.addHandler(handler)
+    return logger
+
+# Initialize the logger when this module is imported
+logger = setup_logging()
 
 # Maximum number of function evals for a single run
 MAX_FES = 50_000
@@ -27,4 +41,5 @@ __all__ = [
     'MONGODB_URI',
     'XTOL',
     'FTOL',
+    'logger',
 ]

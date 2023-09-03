@@ -1,12 +1,8 @@
-from functools import cache
 import pprint
-import nevis
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from .config import MAX_FES, RUN_NUM, MAX_INSTANCE_FES
-from tqdm import tqdm
-import logging
+from .config import MAX_FES, MAX_INSTANCE_FES, logger
 from .randomiser import Randomiser
 
 
@@ -74,9 +70,10 @@ class AlgorithmInstance:
     
     def run_next(self):
         result_index = len(self.results)
-        logging.debug(f'Running #{result_index} of instance {self.instance_index}...')
+        logger.debug(f'Running #{result_index} of instance {self.instance_index}...')
         result = self(result_index)
-        logging.debug(f'Eval num: {result.eval_num}, height: {result.ret_height}')
+        # logger.debug(f'Eval num: {result.eval_num}, height: {result.ret_height}')
+        logger.debug(pprint.pformat(result.to_dict()))
         self.results.append(result)
         return result
 
@@ -96,11 +93,11 @@ class AlgorithmInstance:
         for result in self.results:
             current_instance_fes += result.eval_num
 
-        logging.info(f'Running instance {self.instance_index}')
-        logging.info(pprint.pformat(self.info))
+        logger.info(f'Running instance {self.instance_index}')
+        logger.info(pprint.pformat(self.info))
 
         while current_instance_fes < max_instance_fes:
-            logging.debug(f'Current instance fes: {current_instance_fes}')
+            logger.debug(f'Current instance fes: {current_instance_fes}')
             result = self.run_next()
             current_instance_fes += result.eval_num
             if save_handler is not None:
@@ -113,7 +110,7 @@ class AlgorithmInstance:
             result.trajectory = np.array([])
         self.results_patial = True
 
-    def load_parital_results(self, save_handler):
+    def load_partial_results(self, save_handler):
         """Load all results saved for this instance."""
         self.results = save_handler.find_results(self.info)
         if self.results:
@@ -181,7 +178,7 @@ class AlgorithmInstance:
                 'success_rate_lower': 0,
                 'success_rate_length': 0,
 
-                'gary_ert': float('inf'),
+                'gary_ert': float('inf') if gary_score_sum == 0 else (np.sum(success_evals) + np.sum(failed_evals)) / gary_score_sum,
             }
 
         # success_eval_var = np.var(success_evals, ddof=1)

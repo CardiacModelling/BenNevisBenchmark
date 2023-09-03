@@ -1,10 +1,7 @@
-from .algorithm_instance import AlgorithmInstance
 from .result import Result
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from .config import MONGODB_URI
-import logging
-
+from .config import MONGODB_URI, logger
 
 
 class SaveHandler:
@@ -14,9 +11,10 @@ class SaveHandler:
         # Send a ping to confirm a successful connection
         try:
             self.client.admin.command('ping')
-            logging.info("Pinged your deployment. You successfully connected to MongoDB!")
+            logger.info(f"Pinged your deployment at {MONGODB_URI}.\nYou successfully connected to MongoDB!")
         except Exception as e:
-            logging.exception(e)
+            logger.debug(MONGODB_URI)
+            logger.exception(e)
         self.db = self.client[database]
         self.res_collection = self.db['results']
         self.algo_collection = self.db['algorithms']
@@ -27,7 +25,7 @@ class SaveHandler:
         
     def save_result(self, result):
         if None in list(result.info.values()):
-            logging.warning('Saving a result with incomplete info!')
+            logger.warning('Saving a result with incomplete info!')
         result_dict = result.to_dict()
         self.res_collection.update_one(result.info, {"$set": result_dict}, upsert=True)
     
@@ -80,6 +78,7 @@ class SaveHandler:
             return
         algorithm.best_instance_index = doc['best_instance_index']
         algorithm.best_instance = algorithm.generate_instance(algorithm.best_instance_index)
+        algorithm.best_instance.load_partial_results(save_handler=self)
 
     def load_algorithm_instance_indices(self, algorithm):
         res = self.find_instances(algorithm.info)

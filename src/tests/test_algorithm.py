@@ -166,7 +166,7 @@ class TestRunner(unittest.TestCase):
         self.assertEqual(algo.instance_indices, algo2.instance_indices)
 
         # Load the results for a single instance
-        ins2.load_parital_results(save_handler=self.save_handler)
+        ins2.load_partial_results(save_handler=self.save_handler)
         self.assertEqual(len(ins2.results), len(ins.results))
         for res, res2 in zip(ins.results, ins2.results):
             self.assertEqual(res.to_dict(), res2.to_dict())

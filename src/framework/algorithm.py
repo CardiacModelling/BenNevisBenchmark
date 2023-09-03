@@ -1,20 +1,16 @@
-from __future__ import annotations
-
 from .algorithm_instance import AlgorithmInstance
-from .save_handler import SaveHandler
-from .config import RS_ITER_NUM, MAX_INSTANCE_FES
+from .config import RS_ITER_NUM, MAX_INSTANCE_FES, logger
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-import pandas as pd
-import seaborn
-import logging
+# import matplotlib.pyplot as plt
+# import matplotlib
+# import pandas as pd
+# import seaborn
 
 
 class Algorithm:
     def __init__(self, 
                  name: str, 
-                 func: function, 
+                 func, 
                  param_space: dict, 
                  version: int=1):
         """
@@ -171,18 +167,18 @@ class Algorithm:
 
         n = min(iter_num, self.param_space_size)
         while len(self.instance_indices) < n:
-            logging.info(f'{len(self.instance_indices)} / {n} instances...')
+            logger.info(f'{len(self.instance_indices)} / {n} instances...')
             np.random.seed(rand_seed)
             current_instance = self.generate_random_instance()
-            logging.debug(current_instance.params)
+            logger.debug(current_instance.params)
             current_instance.run(
                 save_handler=save_handler,
                 restart=True,
                 max_instance_fes=max_instance_fes,
             )
             current_value = current_instance.performance_measures()[measure]
-            logging.debug(current_instance.performance_measures())
-            logging.info(f'{measure} = {current_value}')
+            logger.debug(current_instance.performance_measures())
+            logger.info(f'{measure} = {current_value}')
             current_instance.make_results_partial()
             if (mode == 'max' and current_value >= best_value)\
                     or (mode == 'min' and current_value <= best_value):
@@ -190,7 +186,7 @@ class Algorithm:
                 self.best_instance = current_instance
                 self.best_instance_index = current_instance.instance_index
                 self.save_best_instance(save_handler=save_handler)
-            logging.info('===')
+            logger.info('===')
 
         return self.best_instance
 
