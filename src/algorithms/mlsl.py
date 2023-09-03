@@ -42,7 +42,7 @@ mlsl = Algorithm(
     name='MLSL', 
     version=1,
     param_space={
-        'population': list(range(1, 30)) + [10 * i for i in range(4, 11)]
+        'population': list(range(1, 1001)),
     },
     func=run_mlsl,
 )
