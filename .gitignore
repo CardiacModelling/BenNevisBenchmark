@@ -167,3 +167,5 @@ saved-old/
 *.txt
 *.pkl
 basin/
+
+src/*.ipynb
