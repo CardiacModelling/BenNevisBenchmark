@@ -116,7 +116,7 @@ class AlgorithmInstance:
         if self.results:
             self.results_patial = True
 
-    def performance_measures(self, excluding_first=False):
+    def performance_measures(self, excluding_first=False, cnt=None):
         """
         Return all the performance measures of the instance. It's safe to run this
         method if even the results are ``partial''.
@@ -140,7 +140,10 @@ class AlgorithmInstance:
             - 'sp': The success performance.
         """
 
-        results = self.results if not excluding_first else self.results[1:]
+        start_idx = 0 if not excluding_first else 1
+        end_idx = len(self.results) if cnt is None else min(cnt + start_idx, len(self.results))
+        
+        results = self.results[start_idx:end_idx]
         run_num = len(results)
 
         success_evals = []
