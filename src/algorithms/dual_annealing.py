@@ -59,7 +59,6 @@ dual_annealing = Algorithm(
         'initial_temp': np.logspace(np.log10(0.02), np.log10(5e4), 200),
         'restart_temp_ratio': np.logspace(-6, np.log10(0.9), 200),
         'visit': np.linspace(1.5, 2.9, 100),
-        # 'accept': -np.logspace(np.log10(1.1e-4), np.log10(5), 100),
         'accept': np.linspace(-5, -1.1e-4, 100),
     },
     version=3

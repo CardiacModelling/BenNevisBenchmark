@@ -39,6 +39,7 @@ def run_algo(
     ins.run(
         restart=True, 
         max_instance_fes=max_instance_fes_best,
+        save_handler=save_handler,
     )
     ins.plot_convergence_graph(img_path=f'{algo_name}-convergence.png')
     ins.plot_stacked_graph(img_path=f'{algo_name}-stacked-last.png')
