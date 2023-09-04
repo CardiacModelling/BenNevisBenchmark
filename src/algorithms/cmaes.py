@@ -1,9 +1,9 @@
 import pints
-from framework import optimizer, MAX_FES, SUCCESS_HEIGHT, Algorithm
+from framework import optimizer, MAX_FES, SUCCESS_HEIGHT, Algorithm, FTOL
 import numpy as np
 
 @optimizer
-def run_cmaes(f, x_max, y_max, rand_seed, init_guess, population_size, sigma0_n):
+def run_cmaes(f, x_max, y_max, rand_seed, init_guess, population_size=None, sigma0_n=None):
 
     np.random.seed(rand_seed)
     # Use best found, instead of best guessed
@@ -28,12 +28,13 @@ def run_cmaes(f, x_max, y_max, rand_seed, init_guess, population_size, sigma0_n)
     opt = pints.OptimisationController(
         e,
         x0=init_guess,
-        sigma0=min(b.range()) / sigma0_n,
+        sigma0=min(b.range()) / sigma0_n if sigma0_n is not None else None,
         boundaries=b,
         method=pints.CMAES,
     )
-    opt.optimiser().set_population_size(population_size)
-    opt.set_max_unchanged_iterations(100, threshold=0.2)
+    if population_size is not None:
+        opt.optimiser().set_population_size(population_size)
+    opt.set_max_unchanged_iterations(100, threshold=FTOL)
     opt.set_max_evaluations(MAX_FES)
     opt.set_threshold(-SUCCESS_HEIGHT)
     opt.set_f_guessed_tracking(not use_x_best)

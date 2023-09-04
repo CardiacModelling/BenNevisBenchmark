@@ -36,7 +36,7 @@ class Algorithm:
         self.func = func
         self.version = version
         self.best_instance = None
-        self.best_instance_index = -1
+        self.best_instance_index = -2
 
         self.param_space = param_space
         self.param_keys = list(param_space.keys())
@@ -54,6 +54,8 @@ class Algorithm:
         }
     
     def index_to_tuple(self, index):
+        assert index != -1
+
         result = []
         for l in self.param_value_lens[::-1]:
             result.append(index % l)
@@ -61,6 +63,8 @@ class Algorithm:
         return tuple(result[::-1])
 
     def index_to_params(self, index):
+        if index == -1:
+            return {}
         tpl = self.index_to_tuple(index)
         return {k: self.param_space[k][i] 
                 for k, i in zip(self.param_keys, tpl)}
@@ -82,6 +86,9 @@ class Algorithm:
             i = np.argmin(np.abs(vs - v))
             t.append(i)
         return self.tuple_to_index(tuple(t))
+    
+    def generate_default_instance(self):
+        return self.generate_instance(-1)
 
     def generate_instance(self, instance_index): 
         """
@@ -113,7 +120,7 @@ class Algorithm:
         Generate a random instance of this algorithm by drawing from the
         hyper-parameter space.
         """
-        i = 0
+        i = -1
         while i in self.instance_indices:
             i = np.random.randint(0, self.param_space_size)
         return self.generate_instance(i)

@@ -76,7 +76,7 @@ class SaveHandler:
     
     def load_algorithm_best_instance(self, algorithm):
         doc = self.algo_collection.find_one(algorithm.info)
-        if doc is None or doc['best_instance_index'] == -1: 
+        if doc is None or doc['best_instance_index'] == -2: 
             return
         algorithm.best_instance_index = doc['best_instance_index']
         algorithm.best_instance = algorithm.generate_instance(algorithm.best_instance_index)

@@ -52,7 +52,6 @@ def run_dual_annealing(
     init_guess, 
     **params
 ):
-    params['maxiter'] = int(params['maxiter'])
     ret = scipy.optimize.dual_annealing(
         f,
         bounds=[(0, x_max), (0, y_max)],
@@ -78,7 +77,7 @@ def run_mlsl(
     y_max, 
     rand_seed, 
     init_guess, 
-    population
+    population=None,
 ):
     opt = nlopt.opt(nlopt.G_MLSL, 2)
     nlopt.srand(seed=rand_seed)
@@ -92,7 +91,8 @@ def run_mlsl(
     local_opt.set_xtol_abs(10)
 
     opt.set_local_optimizer(local_opt)
-    opt.set_population(int(population))
+    if population is not None:
+        opt.set_population(int(population))
     opt.set_ftol_abs(0.2)
     opt.set_xtol_abs(10)
     opt.set_maxeval(10_000)

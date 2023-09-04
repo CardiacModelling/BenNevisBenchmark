@@ -9,7 +9,7 @@ def run_mlsl(
     y_max, 
     rand_seed, 
     init_guess, 
-    population
+    population=None,
 ):
     opt = nlopt.opt(nlopt.G_MLSL, 2)
     nlopt.srand(seed=rand_seed)
@@ -20,7 +20,8 @@ def run_mlsl(
     opt.set_xtol_abs(XTOL)
     opt.set_maxeval(MAX_FES)
     opt.set_stopval(-SUCCESS_HEIGHT)
-    opt.set_population(population)
+    if population is not None:
+        opt.set_population(population)
 
     local_opt = nlopt.opt(nlopt.LN_NELDERMEAD, 2)
     local_opt.set_ftol_abs(FTOL)
