@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from .config import MAX_FES, MAX_INSTANCE_FES, logger
 from .randomiser import Randomiser
+from tqdm import tqdm
 
 
 def pad_list(ls, mode='last'):
@@ -96,12 +97,15 @@ class AlgorithmInstance:
         logger.info(f'Running instance {self.instance_index}')
         logger.info(pprint.pformat(self.info))
 
-        while current_instance_fes < max_instance_fes:
-            logger.debug(f'Current instance fes: {current_instance_fes}')
-            result = self.run_next()
-            current_instance_fes += result.eval_num
-            if save_handler is not None:
-                save_handler.save_result(result, partial=save_partial)
+        with tqdm(total=max_instance_fes) as pbar:
+            pbar.update(current_instance_fes)
+            while current_instance_fes < max_instance_fes:
+                logger.debug(f'Current instance fes: {current_instance_fes}')
+                result = self.run_next()
+                current_instance_fes += result.eval_num
+                pbar.update(result.eval_num)
+                if save_handler is not None:
+                    save_handler.save_result(result, partial=save_partial)
 
     def make_results_partial(self):
         for result in self.results:
