@@ -115,11 +115,12 @@ class Result:
 
     def __repr__(self) -> str:
         return str(self.to_dict())
-    def to_dict(self):
+    
+    def to_dict(self, partial=True):
         def to_float_list(t):
             x, y = t
             return [float(x), float(y)]
-        return {
+        res = {
             **self.info,
             # 'algorithm_name': self.info['algorithm_name'],
             # 'algorithm_version': self.info['algorithm_version'],
@@ -137,6 +138,11 @@ class Result:
 
             'info': self.info,
         }
+
+        if not partial:
+            res['points'] = [to_float_list(p) for p in self.points]
+        
+        return res
 
     @property
     def ret_distance(self):

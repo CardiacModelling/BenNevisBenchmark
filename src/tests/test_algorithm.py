@@ -171,12 +171,17 @@ class TestRunner(unittest.TestCase):
         self.assertEqual(algo.instance_indices, algo2.instance_indices)
 
         # Load the results for a single instance
-        ins2.load_partial_results(save_handler=self.save_handler)
+        ins2.load_results(save_handler=self.save_handler)
         self.assertEqual(len(ins2.results), len(ins.results))
         for res, res2 in zip(ins.results, ins2.results):
             self.assertEqual(res.to_dict(), res2.to_dict())
         
-        ins2.run(restart=True, max_instance_fes=30_000)
+        ins2.run(
+            restart=True, 
+            max_instance_fes=30_000, 
+            save_partial=False, 
+            save_handler=self.save_handler,
+        )
 
         ins2.plot_convergence_graph(img_path='/tmp/convergence-graph-2.png')
         ins2.plot_stacked_graph(img_path='/tmp/stacked-graph-2.png')
@@ -193,6 +198,34 @@ class TestRunner(unittest.TestCase):
             shallow=False,
         ))
 
+        # Suppose we start once again, with results fully stored
+        algo3 = Algorithm(
+            name=algo_name, 
+            version=algo_version,
+            param_space={
+                'population': list(range(1, 30))
+            },
+            func=run_mlsl,
+        )
+        algo3.load_best_instance(
+            save_handler=self.save_handler, 
+            result_partial=False,
+        )
+        ins3 = algo3.best_instance
+        ins3.plot_convergence_graph(img_path='/tmp/convergence-graph-3.png')
+        ins3.plot_stacked_graph(img_path='/tmp/stacked-graph-3.png')
+        
+        self.assertTrue(filecmp.cmp(
+            '/tmp/convergence-graph.png',
+            '/tmp/convergence-graph-3.png',
+            shallow=False,
+        ))
+
+        self.assertTrue(filecmp.cmp(
+            '/tmp/stacked-graph.png',
+            '/tmp/stacked-graph-3.png',
+            shallow=False,
+        ))
 
 
 

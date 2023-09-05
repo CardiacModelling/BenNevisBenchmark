@@ -129,9 +129,9 @@ class Algorithm:
         if save_handler is not None:
             save_handler.save_algorithm_best_instance(self)
     
-    def load_best_instance(self, save_handler=None):
+    def load_best_instance(self, save_handler=None, result_partial=True):
         if save_handler is not None:
-            save_handler.load_algorithm_best_instance(self)
+            save_handler.load_algorithm_best_instance(self, result_partial)
     
     def load_instance_indices(self, save_handler=None):
         if save_handler is not None:

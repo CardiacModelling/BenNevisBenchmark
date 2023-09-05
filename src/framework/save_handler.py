@@ -25,14 +25,17 @@ class SaveHandler:
         self.res_collection.drop()
         self.algo_collection.drop()
         
-    def save_result(self, result):
+    def save_result(self, result, partial=True):
         if None in list(result.info.values()):
             logger.warning('Saving a result with incomplete info!')
-        result_dict = result.to_dict()
+        result_dict = result.to_dict(partial=partial)
         self.res_collection.update_one(result.info, {"$set": result_dict}, upsert=True)
     
-    def find_results(self, query):
-        docs = self.res_collection.find(query, {"_id": 0})
+    def find_results(self, query, partial=True):
+        projection = {"_id": 0}
+        if partial:
+            projection['points'] = 0
+        docs = self.res_collection.find(query, projection)
         return [Result(**doc) for doc in docs]
     
     def find_instances(self, query):
@@ -74,13 +77,13 @@ class SaveHandler:
             upsert=True,
         )
     
-    def load_algorithm_best_instance(self, algorithm):
+    def load_algorithm_best_instance(self, algorithm, results_partial=True):
         doc = self.algo_collection.find_one(algorithm.info)
         if doc is None or doc['best_instance_index'] == -2: 
             return
         algorithm.best_instance_index = doc['best_instance_index']
         algorithm.best_instance = algorithm.generate_instance(algorithm.best_instance_index)
-        algorithm.best_instance.load_partial_results(save_handler=self)
+        algorithm.best_instance.load_results(save_handler=self, partial=results_partial)
 
     def load_algorithm_instance_indices(self, algorithm):
         res = self.find_instances(algorithm.info)

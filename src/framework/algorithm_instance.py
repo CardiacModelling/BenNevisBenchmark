@@ -80,7 +80,7 @@ class AlgorithmInstance:
     def __eq__(self, other) -> bool:
         return self.info == other.info
 
-    def run(self, save_handler=None, max_instance_fes=MAX_INSTANCE_FES, restart=False):
+    def run(self, save_handler=None, max_instance_fes=MAX_INSTANCE_FES, restart=False, save_partial=True):
         """
         Run this instance and save all results.
         """
@@ -101,7 +101,7 @@ class AlgorithmInstance:
             result = self.run_next()
             current_instance_fes += result.eval_num
             if save_handler is not None:
-                save_handler.save_result(result)
+                save_handler.save_result(result, partial=save_partial)
 
     def make_results_partial(self):
         for result in self.results:
@@ -110,11 +110,11 @@ class AlgorithmInstance:
             result.trajectory = np.array([])
         self.results_patial = True
 
-    def load_partial_results(self, save_handler):
+    def load_results(self, save_handler, partial=True):
         """Load all results saved for this instance."""
-        self.results = save_handler.find_results(self.info)
+        self.results = save_handler.find_results(self.info, partial=partial)
         if self.results:
-            self.results_patial = True
+            self.results_patial = partial
 
     def performance_measures(self, excluding_first=False, max_instance_fes=None):
         """
