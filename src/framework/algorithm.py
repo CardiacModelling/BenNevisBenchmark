@@ -74,7 +74,7 @@ class Algorithm:
         for i, l in enumerate(self.param_value_lens):
             result *= l
             result += t[i]
-        return result
+        return int(result)
     
     def params_to_index(self, params):
         """Find the closest instance index to the given params."""
