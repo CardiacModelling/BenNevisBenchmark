@@ -1,10 +1,11 @@
-from .result import Result
+from ..result import Result
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from .config import MONGODB_URI, logger
+from ..config import MONGODB_URI, logger
+from .save_handler import SaveHandler
 
 
-class SaveHandler:
+class SaveHandlerMongo(SaveHandler):
     def __init__(self, database='test'):
         # Create a new client and connect to the server
         self.client = MongoClient(MONGODB_URI, server_api=ServerApi('1'))

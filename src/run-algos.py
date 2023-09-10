@@ -16,6 +16,7 @@ def run_algo(
     iter_num=RS_ITER_NUM,
     max_instance_fes_ht=MAX_INSTANCE_FES,
     max_instance_fes_best=MAX_INSTANCE_FES * 5,
+    save_type='json',
 ):
     algo = None
     for a in algo_list:
@@ -27,7 +28,12 @@ def run_algo(
     
     if db_name is None:
         db_name = algo_name
-    save_handler = SaveHandler(db_name)
+    
+    if save_type == 'json':
+        save_handler = SaveHandlerJSON(db_name, db_name)
+    elif save_type == 'mongo':
+        save_handler = SaveHandlerMongo(db_name)
+    
     algo.load_best_instance(save_handler=save_handler)
     algo.load_instance_indices(save_handler=save_handler)
     algo.tune_params(

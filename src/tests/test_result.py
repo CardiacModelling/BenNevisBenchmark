@@ -1,5 +1,5 @@
 import unittest
-from framework import Result, SUCCESS_HEIGHT
+from framework import Result
 from util import run_sample_opt
 import logging
 import nevis

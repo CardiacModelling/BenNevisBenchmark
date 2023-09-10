@@ -1,21 +1,22 @@
 import unittest
-from framework import optimizer, MAX_FES, Result, Algorithm, SaveHandler
-import scipy.optimize
-import logging
-import numpy as np
+from framework import Result, Algorithm, SaveHandlerMongo, SaveHandlerJSON
 from pympler import asizeof
-import nlopt
 from util import run_dual_annealing, run_mlsl
 import filecmp
-import os
+from parameterized import parameterized
 
 
 class TestRunner(unittest.TestCase):
     def setUp(self) -> None:
-        self.save_handler = SaveHandler('unittest2')
+        self.save_handlers = [
+            SaveHandlerMongo('unittest2'),
+            SaveHandlerJSON('unittest2')
+        ]
+        self.maxDiff = None
     
     def tearDown(self) -> None:
-        self.save_handler.drop_database()
+        for s in self.save_handlers:
+            s.drop_database()
 
     def test_optimizer(self):
         rand_seed = 100
@@ -115,8 +116,8 @@ class TestRunner(unittest.TestCase):
         self.assertEqual(default_ins.instance_index, -1)
         self.assertEqual(default_ins.params, {})
 
-    
-    def test_algorithm_2(self):
+    @parameterized.expand([0, 1])
+    def test_algorithm_2(self, i):
         algo_name = 'MLSL test'
         algo_version = 456
         algo = Algorithm(
@@ -131,7 +132,7 @@ class TestRunner(unittest.TestCase):
             iter_num=3,
             max_instance_fes=30_000,
             rand_seed=566,
-            save_handler=self.save_handler,
+            save_handler=self.save_handlers[i],
         )
 
         ins = algo.best_instance
@@ -160,18 +161,18 @@ class TestRunner(unittest.TestCase):
         )
 
         # Loading the best instance of an algorithm
-        algo2.load_best_instance(save_handler=self.save_handler)
+        algo2.load_best_instance(save_handler=self.save_handlers[i])
         ins2 = algo2.best_instance
         self.assertEqual(ins.params, ins2.params)
         self.assertEqual(ins.info, ins2.info)
         self.assertEqual(ins.performance_measures(), ins2.performance_measures())
 
         # Loading all instance indices
-        algo2.load_instance_indices(save_handler=self.save_handler)
+        algo2.load_instance_indices(save_handler=self.save_handlers[i])
         self.assertEqual(algo.instance_indices, algo2.instance_indices)
 
         # Load the results for a single instance
-        ins2.load_results(save_handler=self.save_handler)
+        ins2.load_results(save_handler=self.save_handlers[i])
         self.assertEqual(len(ins2.results), len(ins.results))
         for res, res2 in zip(ins.results, ins2.results):
             self.assertEqual(res.to_dict(), res2.to_dict())
@@ -180,7 +181,7 @@ class TestRunner(unittest.TestCase):
             restart=True, 
             max_instance_fes=30_000, 
             save_partial=False, 
-            save_handler=self.save_handler,
+            save_handler=self.save_handlers[i],
         )
 
         ins2.plot_convergence_graph(img_path='/tmp/convergence-graph-2.png')
@@ -208,7 +209,7 @@ class TestRunner(unittest.TestCase):
             func=run_mlsl,
         )
         algo3.load_best_instance(
-            save_handler=self.save_handler, 
+            save_handler=self.save_handlers[i], 
             result_partial=False,
         )
         ins3 = algo3.best_instance
