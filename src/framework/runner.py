@@ -35,7 +35,7 @@ def optimizer(opt):
     """
 
     @wraps(opt)
-    def func(rand_seed, init_guess, **params):
+    def func(rand_seed, init_guess, trial):
         points = []
         function_values = []
 
@@ -59,7 +59,7 @@ def optimizer(opt):
             y_max,
             rand_seed,
             init_guess,
-            **params
+            trial,
         )
 
         x = res_dict['x']

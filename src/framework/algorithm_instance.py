@@ -5,6 +5,7 @@ from matplotlib.patches import Patch
 from .config import MAX_FES, MAX_INSTANCE_FES, logger
 from .randomiser import Randomiser
 from tqdm import tqdm
+import optuna
 
 
 def pad_list(ls, mode='last'):
@@ -33,7 +34,7 @@ def pad_list(ls, mode='last'):
 
 
 class AlgorithmInstance:
-    def __init__(self, algorithm, instance_index):
+    def __init__(self, algorithm, trial: optuna.Trial):
         """
         Class for an algorithm instance. All results of this instance
         previously saved will be loaded automatically.
@@ -45,43 +46,45 @@ class AlgorithmInstance:
         """
 
         self.algorithm = algorithm
-        self.instance_index = instance_index
         
         self.results = []
         self.results_patial = False
+
+        self.trial = trial
 
     @property
     def info(self):
         return {
             'algorithm_name': self.algorithm.name,
             'algorithm_version': self.algorithm.version,
-            'instance_index': self.instance_index,
+            'instance_index': self.trial._trial_id,
         }
-    
-    @property
-    def params(self):
-        return self.algorithm.index_to_params(self.instance_index)
     
     def __call__(self, result_index):
         rand_seed = Randomiser.get_rand_seed(result_index)
         init_guess = Randomiser.get_init_guess(result_index)
-        result = self.algorithm.func(rand_seed, init_guess, **self.params)
+        result = self.algorithm.func(rand_seed, init_guess, self.trial)
         result.set_info({**self.info, 'result_index': result_index})
         return result
     
     def run_next(self):
         result_index = len(self.results)
-        logger.debug(f'Running #{result_index} of instance {self.instance_index}...')
+        logger.debug(f'Running #{result_index}...')
         result = self(result_index)
         # logger.debug(f'Eval num: {result.eval_num}, height: {result.ret_height}')
         logger.debug(pprint.pformat(result.to_dict()))
         self.results.append(result)
         return result
 
-    def __eq__(self, other) -> bool:
-        return self.info == other.info
-
-    def run(self, save_handler=None, max_instance_fes=MAX_INSTANCE_FES, restart=False, save_partial=True):
+    def run(
+        self, 
+        save_handler=None, 
+        max_instance_fes=MAX_INSTANCE_FES, 
+        restart=False, 
+        save_partial=True,
+        does_prune=True,
+        measure='gary_ert',
+    ):
         """
         Run this instance and save all results.
         """
@@ -94,8 +97,8 @@ class AlgorithmInstance:
         for result in self.results:
             current_instance_fes += result.eval_num
 
-        logger.info(f'Running instance {self.instance_index}')
         logger.info(pprint.pformat(self.info))
+        step = 0
 
         with tqdm(total=max_instance_fes) as pbar:
             pbar.update(current_instance_fes)
@@ -106,6 +109,11 @@ class AlgorithmInstance:
                 pbar.update(result.eval_num)
                 if save_handler is not None:
                     save_handler.save_result(result, partial=save_partial)
+                if does_prune:
+                    self.trial.report(self.performance_measures()[measure], step)
+                    if self.trial.should_prune():
+                        raise optuna.TrialPruned()
+                    step += 1
 
     def make_results_partial(self):
         for result in self.results:
