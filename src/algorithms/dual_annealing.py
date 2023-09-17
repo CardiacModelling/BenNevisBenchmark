@@ -1,11 +1,19 @@
-from framework import optimizer, MAX_FES, Algorithm, SUCCESS_HEIGHT
+from framework import optimizer, Algorithm, SUCCESS_HEIGHT
 import scipy.optimize
 import logging
 import optuna
 
 
 @optimizer
-def run_dual_annealing(f, x_max, y_max, rand_seed, init_guess, trial: optuna.Trial):
+def run_dual_annealing(
+    f, 
+    x_max, 
+    y_max, 
+    rand_seed, 
+    init_guess, 
+    trial: optuna.Trial,
+    get_budget,
+):
     def stopping_criterion(x, z, context):
         # Define your custom stopping condition here
         # For example, stop when the function value is below a threshold
@@ -30,7 +38,7 @@ def run_dual_annealing(f, x_max, y_max, rand_seed, init_guess, trial: optuna.Tri
         ret = scipy.optimize.dual_annealing(
             f,
             bounds=[(0, x_max), (0, y_max)],
-            maxfun=MAX_FES,
+            maxfun=get_budget(),
             seed=rand_seed,
             x0=init_guess,
             minimizer_kwargs={

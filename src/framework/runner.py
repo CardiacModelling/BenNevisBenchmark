@@ -2,6 +2,7 @@ import nevis
 from functools import wraps
 
 from .result import Result
+from .config import MAX_FES
 
 f = nevis.linear_interpolant()
 f_grad = nevis.linear_interpolant(grad=True)
@@ -50,6 +51,9 @@ def optimizer(opt):
                 z = f(x, y)
             function_values.append(z)
             return -z
+        
+        def get_budget():
+            return MAX_FES - len(function_values)
 
         x_max, y_max = nevis.dimensions()
 
@@ -60,6 +64,7 @@ def optimizer(opt):
             rand_seed,
             init_guess,
             trial,
+            get_budget,
         )
 
         x = res_dict['x']

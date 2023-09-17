@@ -1,5 +1,5 @@
 import nlopt
-from framework import optimizer, MAX_FES, Algorithm, XTOL, FTOL, SUCCESS_HEIGHT
+from framework import optimizer, Algorithm, XTOL, FTOL, SUCCESS_HEIGHT
 import numpy as np
 
 @optimizer
@@ -10,6 +10,7 @@ def run_mlsl(
     rand_seed, 
     init_guess, 
     trial,
+    get_budget,
 ):
     opt = nlopt.opt(nlopt.G_MLSL, 2)
     nlopt.srand(seed=rand_seed)
@@ -18,7 +19,7 @@ def run_mlsl(
     opt.set_min_objective(f)
     opt.set_ftol_abs(FTOL)
     opt.set_xtol_abs(XTOL)
-    opt.set_maxeval(MAX_FES)
+    opt.set_maxeval(get_budget())
     opt.set_stopval(-SUCCESS_HEIGHT)
 
     population = trial.suggest_int('population', 1, 3000)

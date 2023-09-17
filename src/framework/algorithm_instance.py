@@ -417,8 +417,10 @@ class AlgorithmInstance:
 
         assert not self.results_patial, "Results must be fully loaded."
 
+        results = self.results[start_idx:]
+
         start_idx = 1 if excluding_first else 0
-        function_values = pad_list([result.heights for result in self.results[start_idx:]], mode=mode)
+        function_values = pad_list([result.heights for result in results], mode=mode)
         # $[0, 600)$ & Lowland areas\\
         # $[600, 1000)$ & Mountainous areas\\
         # $[1000, 1100)$ & Approximately top 135 Munros \& 5 Welsh `Furths' \\
@@ -527,7 +529,7 @@ class AlgorithmInstance:
         fig.suptitle(
             'Number of runs reaching height levels at each function\n'
             'evaluation for {} runs of {}'.format(
-                len(self.results),
+                len(results),
                 self.algorithm.name
             ))
 
