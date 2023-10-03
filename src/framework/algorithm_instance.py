@@ -34,7 +34,7 @@ def pad_list(ls, mode='last'):
 
 
 class AlgorithmInstance:
-    def __init__(self, algorithm, trial: optuna.Trial):
+    def __init__(self, algorithm, trial: optuna.Trial, instance_index=None):
         """
         Class for an algorithm instance. All results of this instance
         previously saved will be loaded automatically.
@@ -51,14 +51,21 @@ class AlgorithmInstance:
         self.results_patial = False
 
         self.trial = trial
+        self.instance_index = instance_index
 
     @property
     def info(self):
-        return {
-            'algorithm_name': self.algorithm.name,
-            'algorithm_version': self.algorithm.version,
-            'instance_index': self.trial._trial_id,
-        }
+        try:
+            return {
+                'algorithm_name': self.algorithm.name,
+                'algorithm_version': self.algorithm.version,
+                'instance_index': self.trial._trial_id,
+            }
+        except AttributeError:
+            return {'algorithm_name': self.algorithm.name,
+                'algorithm_version': self.algorithm.version,
+                'instance_index': self.instance_index,
+            }
     
     def __call__(self, result_index):
         rand_seed = Randomiser.get_rand_seed(result_index)
@@ -416,10 +423,8 @@ class AlgorithmInstance:
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
-
-        results = self.results[start_idx:]
-
         start_idx = 1 if excluding_first else 0
+        results = self.results[start_idx:]
         function_values = pad_list([result.heights for result in results], mode=mode)
         # $[0, 600)$ & Lowland areas\\
         # $[600, 1000)$ & Mountainous areas\\
