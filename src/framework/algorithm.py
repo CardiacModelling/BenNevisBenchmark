@@ -1,12 +1,6 @@
 from .algorithm_instance import AlgorithmInstance
-from .config import RS_ITER_NUM, MAX_INSTANCE_FES, logger
-import numpy as np
-# import matplotlib.pyplot as plt
-# import matplotlib
-# import pandas as pd
-# import seaborn
+from .config import RS_ITER_NUM, MAX_INSTANCE_FES
 import optuna
-import os
 
 
 class Algorithm:
@@ -55,7 +49,29 @@ class Algorithm:
         plot_path=None,
         make_all_plots=True,
     ):
+        """
+        Tune the hyper-parameters of the algorithm.
         
+        Parameters
+        ----------
+        db_path : string
+            The path to the database file.
+        iter_num : int
+            The number of iterations to run the hyper-parameter tuning, i.e. the number of instances to generate.
+        measure : string
+            The performance measure to use for the hyper-parameter tuning.
+        direction : 'minimize' or 'maximize'
+            The direction to optimize the performance measure.
+        save_handler : SaveHandler
+            The save handler to use for saving the results.
+        max_instance_fes : int
+            The maximum number of function evaluations for a single instance.
+        plot_path : string
+            The path to save the plots.
+        make_all_plots : bool
+            Whether to make all plots or just the best instance's plots.
+        """
+
         def objective(trial: optuna.Trial):
             instance = AlgorithmInstance(self, trial)
             instance.run(save_handler, max_instance_fes)

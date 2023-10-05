@@ -5,10 +5,37 @@ import nevis
 class Randomiser:
     @staticmethod
     def get_rand_seed(index: int) -> int:
+        """
+        Get the random seed for the index-th run.
+
+        Parameters
+        ----------
+        index : int
+            The index of the run.
+        
+        Returns
+        -------
+        int
+            The random seed for the index-th run.
+        """
         return index * 1033 + 1234
     
     @staticmethod
     def get_init_guess(index: int) -> np.ndarray:
+        """
+        Get the initial guess for the index-th run. The 0-th run is a fixed
+        point near Ben Nevis.
+
+        Parameters
+        ----------
+        index : int
+            The index of the run.
+        
+        Returns
+        -------
+        np.ndarray
+            The initial guess for the index-th run.
+        """
         if index == 0:
             x, y = nevis.ben().grid
             return np.array([x + 200, y - 200])

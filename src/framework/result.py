@@ -35,6 +35,42 @@ class Result:
         instance_index=None,
         result_index=None,
     ):
+        """
+        Class for a result of an algorithm.
+        
+        Parameters
+        ----------
+        ret_point : tuple
+            The point of the result.
+        ret_height : float
+            The height of the result.
+        points : list
+            The list of all visited points.
+        message : string
+            The message of the result.
+        heights : list
+            The list of all visited heights.
+        trajectory : list
+            A self defined list of points that the algorithm has visited.
+        is_success : bool
+            Whether the result is successful. For loading saved results.
+        gary_score : int
+            The Gary score of the result. For loading saved results.
+        eval_num : int
+            The number of function evaluations used. For loading saved results.
+        len_points : int
+            The number of points visited. For loading saved results.
+        info : dict
+            The information of the result.
+        algorithm_name : string
+            The name of the algorithm.
+        algorithm_version : int
+            The version of the algorithm.
+        instance_index : int
+            The index of the instance.
+        result_index : int
+            The index of the result.
+        """
         self.ret_point = ret_point
         self.ret_height = ret_height
         self.points = np.array(points)

@@ -1,4 +1,4 @@
-from framework import optimizer, Algorithm, SUCCESS_HEIGHT
+from framework import optimizer, Algorithm, SUCCESS_HEIGHT, FTOL, XTOL
 import scipy.optimize
 import logging
 import optuna
@@ -43,7 +43,7 @@ def run_dual_annealing(
             x0=init_guess,
             minimizer_kwargs={
                 'method': 'Nelder-Mead',
-                'options': {'xatol': 10, 'fatol': 0.2},
+                'options': {'xatol': XTOL, 'fatol': FTOL},
             },
             maxiter=100000000, # we want this to be large enough
             callback=stopping_criterion,

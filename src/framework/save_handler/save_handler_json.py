@@ -16,7 +16,6 @@ class SaveHandlerJSON(SaveHandler):
         self.directory = directory
         self.database = database
         self.results_directory = os.path.join(directory, f'{database}_results')
-        self.algorithms_file_path = os.path.join(directory, f'{database}_algorithms.json')
         self.ensure_directory_exists()
     
     def enumerate_results(self):
@@ -27,20 +26,12 @@ class SaveHandlerJSON(SaveHandler):
             with open(os.path.join(self.results_directory, json_path), 'r') as file:
                 res = json.load(file)
                 yield res
-    
-    def load_algorithms(self):
-        with open(self.algorithms_file_path, 'r') as file:
-            algorithms = json.load(file)
-        return algorithms
 
     def ensure_directory_exists(self):
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
         if not os.path.exists(self.results_directory):
             os.makedirs(self.results_directory)
-        if not os.path.exists(self.algorithms_file_path):
-            with open(self.algorithms_file_path, 'w') as file:
-                json.dump({}, file)
 
     def drop_database(self):
         shutil.rmtree(self.directory)
@@ -91,29 +82,3 @@ class SaveHandlerJSON(SaveHandler):
             ins_info['results_count'] = count
             result_instances.append(ins_info)
         return result_instances
-
-    def save_algorithm_best_instance(self, algorithm):
-        algorithm_info = algorithm.info
-        algorithms = self.load_algorithms()
-        algorithms[dict2str(algorithm_info)] = {
-            **algorithm_info,
-            'best_instance_index': algorithm.best_instance_index
-        }
-        with open(self.algorithms_file_path, 'w') as file:
-            json.dump(algorithms, file, indent=4)
-
-    def load_algorithm_best_instance(self, algorithm, results_partial=True):
-        algorithm_info = algorithm.info
-        with open(self.algorithms_file_path, 'r') as file:
-            algorithms = json.load(file)
-
-        res = algorithms.get(dict2str(algorithm_info), None)
-        if res is None or res['best_instance_index'] == -2:
-            return
-        algorithm.best_instance_index = res['best_instance_index']
-        algorithm.best_instance = algorithm.generate_instance(res['best_instance_index'])
-        algorithm.best_instance.load_results(save_handler=self, partial=results_partial)
-
-    def load_algorithm_instance_indices(self, algorithm):
-        res = self.find_instances(algorithm.info)
-        algorithm.instance_indices = set([ins['instance_index'] for ins in res])

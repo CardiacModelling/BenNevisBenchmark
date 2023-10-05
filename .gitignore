@@ -168,6 +168,6 @@ saved-old/
 *.pkl
 basin/
 
-src/*.ipynb
+# src/*.ipynb
 src/da
 src/mlsl

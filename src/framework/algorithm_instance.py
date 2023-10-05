@@ -43,12 +43,22 @@ class AlgorithmInstance:
         ----------
         algorithm : Algorithm
             The algorithm this instance belongs to.
+        trial : optuna.Trial
+            The optuna trial object.
+        instance_index : int
+            The index of this instance. This is used to distinguish between
+            different instances of the same algorithm. If None, the index will
+            be the same as the trial id. This is useful when the trial is
+            an optuna.FixedTrial object that you can specify hyper-parameters
+            manually, which does not have a trial id. In this case you specify
+            the index manually. Try to use a negative index to avoid conflicts
+            with the trial id.
         """
 
         self.algorithm = algorithm
         
         self.results = []
-        self.results_patial = False
+        self.results_patial = False # whether the results are partial
 
         self.trial = trial
         self.instance_index = instance_index
@@ -68,6 +78,23 @@ class AlgorithmInstance:
             }
     
     def __call__(self, result_index):
+        """
+        Run this instance and return the result.
+
+        Parameters
+        ----------
+        result_index : int
+            The index of the result. This is used to distinguish between
+            different results of the same instance. random_seed and init_guess
+            will be generated based on this index.
+        
+        Returns
+        -------
+        Result
+            The result of this run.
+        """
+
+        # generate random seed and initial guess based on result index
         rand_seed = Randomiser.get_rand_seed(result_index)
         init_guess = Randomiser.get_init_guess(result_index)
         result = self.algorithm.func(rand_seed, init_guess, self.trial)
@@ -75,6 +102,9 @@ class AlgorithmInstance:
         return result
     
     def run_next(self):
+        """
+        Run this instance with the next result index and return the result.
+        """
         result_index = len(self.results)
         logger.debug(f'Running #{result_index}...')
         result = self(result_index)
@@ -93,7 +123,25 @@ class AlgorithmInstance:
         measure='gary_ert',
     ):
         """
-        Run this instance and save all results.
+        Run this instance and save all results to self.results.
+
+        Parameters
+        ----------
+        save_handler : SaveHandler
+            The save handler to use for saving the results.
+        max_instance_fes : int
+            The maximum number of function evaluations for a single instance.
+        restart : bool
+            Whether to restart the instance, i.e. clear self.results before running.
+        save_partial : bool
+            Whether to save results partially.
+        does_prune : bool
+            Whether to prune the trial. Set to True if you want to use optuna's
+            pruning feature in the hyper-parameter tuning. Not useful when the trial
+            is a FixedTrial or FrozenTrial object.
+        measure : string
+            The performance measure to use for the hyper-parameter tuning. Only used for
+            pruning.
         """
 
         if restart:
@@ -123,6 +171,7 @@ class AlgorithmInstance:
                     step += 1
 
     def make_results_partial(self):
+        """Make all results of this instance partial."""
         for result in self.results:
             result.points = np.array([])
             result.heights = np.array([])
@@ -130,7 +179,15 @@ class AlgorithmInstance:
         self.results_patial = True
 
     def load_results(self, save_handler, partial=True):
-        """Load all results saved for this instance."""
+        """Load all results saved for this instance.
+
+        Parameters
+        ----------
+        save_handler : SaveHandler
+            The save handler to use for loading the results.
+        partial : bool
+            Whether to load results partially.
+        """
         self.results = save_handler.find_results(self.info, partial=partial)
         if self.results:
             self.results_patial = partial
@@ -139,6 +196,16 @@ class AlgorithmInstance:
         """
         Return all the performance measures of the instance. It's safe to run this
         method if even the results are ``partial''.
+
+        Parameters
+        ----------
+        excluding_first : bool
+            Whether to exclude the first result, which is always close to Ben
+            Nevis.
+        max_instance_fes : int
+            The maximum number of function evaluations for a single instance. If
+            not None, the results will be truncated to have at most this number
+            of function evaluations.
 
         Returns
         -------
@@ -149,7 +216,7 @@ class AlgorithmInstance:
             - 'success_rate': The success rate of the instance.
             - 'failure_rate': The failure rate of the instance.
             - 'success_cnt': The number of successful runs.
-            - 'avg_success_eval': The average number of function evaluations
+            - 'avg_success_eval': The average number of function evaluations.
                for successful runs.
             - 'hv': The hypervolume.
             - 'par2': Penalized average runtime with a factor of 2.
@@ -157,6 +224,10 @@ class AlgorithmInstance:
             - 'avg_height': The average height of the returned points.
             - 'ert': The expected runtime.
             - 'sp': The success performance.
+            - 'success_rate_upper': The upper bound of the success rate (95% CI, Wilson score interval).
+            - 'success_rate_lower': The lower bound of the success rate (95% CI, Wilson score interval).
+            - 'success_rate_length': The length of the success rate interval (95% CI, Wilson score interval).
+            - 'gary_ert': The GERT value based on Gary's score.
         """
 
         start_idx = 0 if not excluding_first else 1
