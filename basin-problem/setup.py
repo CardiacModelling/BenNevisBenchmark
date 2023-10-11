@@ -12,7 +12,7 @@ ext_modules = [
         language='c++',
         name=module_name,
         sources=cpp_sources,
-        extra_compile_args=["-O3", "-fPIC", "-std=c++20", "-mcmodel=large"],
+        extra_compile_args=["-O3", "-fPIC", "-std=c++17", "-mcmodel=large"],
         include_dirs=include_dirs,
     )
 ]
