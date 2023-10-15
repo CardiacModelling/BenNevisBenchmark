@@ -12,31 +12,33 @@ class SaveHandlerMongo(SaveHandler):
         # Send a ping to confirm a successful connection
         try:
             self.client.admin.command('ping')
-            logger.info(f"Pinged your deployment at {MONGODB_URI}.\nYou successfully connected to MongoDB!")
+            logger.info(
+                f"Pinged your deployment at {MONGODB_URI}.\nYou successfully connected to MongoDB!")
         except Exception as e:
             logger.debug(MONGODB_URI)
             logger.exception(e)
         self.db = self.client[database]
         self.res_collection = self.db['results']
         self.database = database
-    
+
     def drop_database(self):
         # self.client.drop_database(self.database)
         self.res_collection.drop()
-        
+
     def save_result(self, result, partial=True):
         if None in list(result.info.values()):
             logger.warning('Saving a result with incomplete info!')
         result_dict = result.to_dict(partial=partial)
-        self.res_collection.update_one(result.info, {"$set": result_dict}, upsert=True)
-    
+        self.res_collection.update_one(
+            result.info, {"$set": result_dict}, upsert=True)
+
     def find_results(self, query, partial=True):
         projection = {"_id": 0}
         if partial:
             projection['points'] = 0
         docs = self.res_collection.find(query, projection)
         return [Result(**doc) for doc in docs]
-    
+
     def find_instances(self, query):
         pipeline = [
             {

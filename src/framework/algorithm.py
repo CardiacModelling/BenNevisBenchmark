@@ -4,10 +4,10 @@ import optuna
 
 
 class Algorithm:
-    def __init__(self, 
+    def __init__(self,
                  name: str,
-                 func, 
-                 version: int=1):
+                 func,
+                 version: int = 1):
         """
         Class for an algorithm.
 
@@ -29,14 +29,13 @@ class Algorithm:
         self.version = version
 
         self.best_instance = None
-    
+
     @property
     def info(self):
         return {
             'algorithm_name': self.name,
             'algorithm_version': self.version,
         }
-
 
     def tune_params(
         self,
@@ -51,7 +50,7 @@ class Algorithm:
     ):
         """
         Tune the hyper-parameters of the algorithm.
-        
+
         Parameters
         ----------
         db_path : string
@@ -76,12 +75,14 @@ class Algorithm:
             instance = AlgorithmInstance(self, trial)
             instance.run(save_handler, max_instance_fes)
             if make_all_plots and plot_path is not None:
-                instance.plot_convergence_graph(img_path=f'{plot_path}/{trial._trial_id}-c.png')
-                instance.plot_stacked_graph(img_path=f'{plot_path}/{trial._trial_id}-s.png')
+                instance.plot_convergence_graph(
+                    img_path=f'{plot_path}/{trial._trial_id}-c.png')
+                instance.plot_stacked_graph(
+                    img_path=f'{plot_path}/{trial._trial_id}-s.png')
             return instance.performance_measures()[measure]
-        
+
         study = optuna.create_study(
-            direction=direction, 
+            direction=direction,
             study_name=f'{self.name}-{self.version}',
             storage=f'sqlite:///{db_path}',
             load_if_exists=True,
@@ -92,15 +93,17 @@ class Algorithm:
 
         if not make_all_plots and plot_path is not None:
             self.best_instance.run(
-                restart=True, 
+                restart=True,
                 save_handler=save_handler,
                 save_partial=False,
                 does_prune=False,
             )
             best_id = study.best_trial._trial_id
-            self.best_instance.plot_convergence_graph(img_path=f'{plot_path}/best-{best_id}-c.png')
-            self.best_instance.plot_stacked_graph(img_path=f'{plot_path}/best-{best_id}-s.png')
-    
+            self.best_instance.plot_convergence_graph(
+                img_path=f'{plot_path}/best-{best_id}-c.png')
+            self.best_instance.plot_stacked_graph(
+                img_path=f'{plot_path}/best-{best_id}-s.png')
+
     def load_best_instance(self, db_path):
         study = optuna.load_study(
             study_name=f'{self.name}-{self.version}',

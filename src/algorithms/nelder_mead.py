@@ -2,13 +2,14 @@ import nlopt
 from framework import optimizer, Algorithm, XTOL, FTOL, SUCCESS_HEIGHT
 import numpy as np
 
+
 @optimizer
 def run_nelder_mead(
-    f, 
-    x_max, 
-    y_max, 
-    rand_seed, 
-    init_guess, 
+    f,
+    x_max,
+    y_max,
+    rand_seed,
+    init_guess,
     trial,
     get_budget,
 ):
@@ -30,8 +31,9 @@ def run_nelder_mead(
         'z': z,
     }
 
+
 nelder_mead = Algorithm(
-    name='Nelder-Mead', 
+    name='Nelder-Mead',
     version=1,
     func=run_nelder_mead,
 )

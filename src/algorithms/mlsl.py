@@ -2,13 +2,14 @@ import nlopt
 from framework import optimizer, Algorithm, XTOL, FTOL, SUCCESS_HEIGHT
 import numpy as np
 
+
 @optimizer
 def run_mlsl(
-    f, 
-    x_max, 
-    y_max, 
-    rand_seed, 
-    init_guess, 
+    f,
+    x_max,
+    y_max,
+    rand_seed,
+    init_guess,
     trial,
     get_budget,
 ):
@@ -41,8 +42,9 @@ def run_mlsl(
         'z': z,
     }
 
+
 mlsl = Algorithm(
-    name='MLSL', 
+    name='MLSL',
     version=1,
     func=run_mlsl,
 )

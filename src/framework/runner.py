@@ -51,7 +51,7 @@ def optimizer(opt):
                 z = f(x, y)
             function_values.append(z)
             return -z
-        
+
         def get_budget():
             return MAX_FES - len(function_values)
 

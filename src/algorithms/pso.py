@@ -3,22 +3,25 @@ from framework import optimizer, SUCCESS_HEIGHT, Algorithm, FTOL
 import numpy as np
 import optuna
 
+
 @optimizer
 def run_pso(
-    f, 
-    x_max, 
-    y_max, 
-    rand_seed, 
-    init_guess, 
+    f,
+    x_max,
+    y_max,
+    rand_seed,
+    init_guess,
     trial: optuna.Trial,
     get_budget,
 ):
     np.random.seed(rand_seed)
     # Create pints error measure
+
     class Error(pints.ErrorMeasure):
         """
         Turn a height into an error to be minimised.
         """
+
         def __init__(self, f):
             self.f = f
 
@@ -27,7 +30,7 @@ def run_pso(
 
         def __call__(self, p):
             return self.f(p)
-    
+
     b = pints.RectangularBoundaries([0, 0], [x_max, y_max])
     width = min(b.range())
     sigma0 = trial.suggest_float('sigma0', width / 20, width / 2)
@@ -52,12 +55,13 @@ def run_pso(
     x, z = opt.run()
 
     return {
-        'x': x, 
+        'x': x,
         'z': z,
     }
 
+
 pso = Algorithm(
-    'pso', 
+    'pso',
     run_pso,
     1,
 )

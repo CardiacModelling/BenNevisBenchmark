@@ -3,13 +3,14 @@ from framework import optimizer, SUCCESS_HEIGHT, Algorithm, FTOL
 import numpy as np
 import optuna
 
+
 @optimizer
 def run_ipop_cmaes(
-    f, 
-    x_max, 
-    y_max, 
-    rand_seed, 
-    init_guess, 
+    f,
+    x_max,
+    y_max,
+    rand_seed,
+    init_guess,
     trial: optuna.Trial,
     get_budget,
 ):
@@ -23,10 +24,12 @@ def run_ipop_cmaes(
     popsize0 = trial.suggest_int('popsize0', 4, 10)
     population_size = popsize0
     # Create pints error measure
+
     class Error(pints.ErrorMeasure):
         """
         Turn a height into an error to be minimised.
         """
+
         def __init__(self, f):
             self.f = f
 
@@ -57,10 +60,10 @@ def run_ipop_cmaes(
         x1, z1 = opt.run()
         if z1 < z:
             x, z = x1, z1
-        
+
         population_size *= popsize_coeff
         i += 1
-        
+
     return {
         'x': x,
         'z': z,

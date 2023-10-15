@@ -2,13 +2,14 @@ import nlopt
 from framework import optimizer, Algorithm, XTOL, FTOL, SUCCESS_HEIGHT
 import numpy as np
 
+
 @optimizer
 def run_nelder_mead_multi(
-    f, 
-    x_max, 
-    y_max, 
-    rand_seed, 
-    init_guess, 
+    f,
+    x_max,
+    y_max,
+    rand_seed,
+    init_guess,
     trial,
     get_budget,
 ):
@@ -40,8 +41,9 @@ def run_nelder_mead_multi(
         'z': z,
     }
 
+
 nelder_mead_multi = Algorithm(
-    name='Nelder-Mead Multi', 
+    name='Nelder-Mead Multi',
     version=1,
     func=run_nelder_mead_multi,
 )

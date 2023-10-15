@@ -12,14 +12,14 @@ class Randomiser:
         ----------
         index : int
             The index of the run.
-        
+
         Returns
         -------
         int
             The random seed for the index-th run.
         """
         return index * 1033 + 1234
-    
+
     @staticmethod
     def get_init_guess(index: int) -> np.ndarray:
         """
@@ -30,7 +30,7 @@ class Randomiser:
         ----------
         index : int
             The index of the run.
-        
+
         Returns
         -------
         np.ndarray

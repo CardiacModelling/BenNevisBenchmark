@@ -6,11 +6,11 @@ import optuna
 
 @optimizer
 def run_dual_annealing(
-    f, 
-    x_max, 
-    y_max, 
-    rand_seed, 
-    init_guess, 
+    f,
+    x_max,
+    y_max,
+    rand_seed,
+    init_guess,
     trial: optuna.Trial,
     get_budget,
 ):
@@ -21,16 +21,17 @@ def run_dual_annealing(
             return True
         else:
             return False
-    
+
     def extract_message(message):
-        if type(message) == str:
+        if type(message) is str:
             return message
-        if type(message) == list:
+        if type(message) is list:
             return '' if not message else message[0]
         return str(message)
 
     initial_temp = trial.suggest_float('initial_temp', 0.02, 5e4, log=True)
-    restart_temp_ratio = trial.suggest_float('restart_temp_ratio', 1e-6, 0.9, log=True)
+    restart_temp_ratio = trial.suggest_float(
+        'restart_temp_ratio', 1e-6, 0.9, log=True)
     visit = trial.suggest_float('visit', 1.5, 2.9)
     accept = trial.suggest_float('accept', -5, -1.1e-4)
 
@@ -45,7 +46,7 @@ def run_dual_annealing(
                 'method': 'Nelder-Mead',
                 'options': {'xatol': XTOL, 'fatol': FTOL},
             },
-            maxiter=100000000, # we want this to be large enough
+            maxiter=100000000,  # we want this to be large enough
             callback=stopping_criterion,
             initial_temp=initial_temp,
             restart_temp_ratio=restart_temp_ratio,

@@ -11,9 +11,6 @@ class SaveHandler:
     def find_results(self, query, partial=True):
         pass
 
-    def find_results(self, query, partial=True):
-        pass
-
     def find_instances(self, query):
         pass
 

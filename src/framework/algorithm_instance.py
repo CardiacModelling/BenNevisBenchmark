@@ -26,7 +26,8 @@ def pad_list(ls, mode='last'):
         ]
     elif mode == 'judge':
         return [
-            np.append(lst, [lst[-1] if 1340 <= lst[-1] < 1350 else 1500] * (length - len(lst)))
+            np.append(lst, [lst[-1] if 1340 <= lst[-1] <
+                      1350 else 1500] * (length - len(lst)))
             for lst in ls
         ]
     else:
@@ -56,9 +57,9 @@ class AlgorithmInstance:
         """
 
         self.algorithm = algorithm
-        
+
         self.results = []
-        self.results_patial = False # whether the results are partial
+        self.results_patial = False  # whether the results are partial
 
         self.trial = trial
         self.instance_index = instance_index
@@ -73,10 +74,10 @@ class AlgorithmInstance:
             }
         except AttributeError:
             return {'algorithm_name': self.algorithm.name,
-                'algorithm_version': self.algorithm.version,
-                'instance_index': self.instance_index,
-            }
-    
+                    'algorithm_version': self.algorithm.version,
+                    'instance_index': self.instance_index,
+                    }
+
     def __call__(self, result_index):
         """
         Run this instance and return the result.
@@ -87,7 +88,7 @@ class AlgorithmInstance:
             The index of the result. This is used to distinguish between
             different results of the same instance. random_seed and init_guess
             will be generated based on this index.
-        
+
         Returns
         -------
         Result
@@ -100,7 +101,7 @@ class AlgorithmInstance:
         result = self.algorithm.func(rand_seed, init_guess, self.trial)
         result.set_info({**self.info, 'result_index': result_index})
         return result
-    
+
     def run_next(self):
         """
         Run this instance with the next result index and return the result.
@@ -114,10 +115,10 @@ class AlgorithmInstance:
         return result
 
     def run(
-        self, 
-        save_handler=None, 
-        max_instance_fes=MAX_INSTANCE_FES, 
-        restart=False, 
+        self,
+        save_handler=None,
+        max_instance_fes=MAX_INSTANCE_FES,
+        restart=False,
         save_partial=True,
         does_prune=True,
         measure='gary_ert',
@@ -147,7 +148,7 @@ class AlgorithmInstance:
         if restart:
             self.results = []
             self.results_patial = False
-        
+
         current_instance_fes = 0
         for result in self.results:
             current_instance_fes += result.eval_num
@@ -165,7 +166,8 @@ class AlgorithmInstance:
                 if save_handler is not None:
                     save_handler.save_result(result, partial=save_partial)
                 if does_prune:
-                    self.trial.report(self.performance_measures()[measure], step)
+                    self.trial.report(
+                        self.performance_measures()[measure], step)
                     if self.trial.should_prune():
                         raise optuna.TrialPruned()
                     step += 1
@@ -279,7 +281,8 @@ class AlgorithmInstance:
                 'success_rate_lower': 0,
                 'success_rate_length': 0,
 
-                'gary_ert': float('inf') if gary_score_sum == 0 else (np.sum(success_evals) + np.sum(failed_evals)) / gary_score_sum,
+                'gary_ert': float('inf') if gary_score_sum == 0 else (
+                    np.sum(success_evals) + np.sum(failed_evals)) / gary_score_sum,
             }
 
         # success_eval_var = np.var(success_evals, ddof=1)
@@ -317,7 +320,7 @@ class AlgorithmInstance:
             'success_rate_upper': center + radius,
             'success_rate_lower': center - radius,
             'success_rate_length': radius * 2,
-            
+
             'gary_ert': (np.sum(success_evals) + np.sum(failed_evals)) / gary_score_sum,
         }
 
@@ -437,8 +440,10 @@ class AlgorithmInstance:
             return re_mean, re_0, re_25, re_50, re_75, re_100
 
         start_idx = 1 if excluding_first else 0
-        function_values = [result.heights for result in self.results[start_idx:]]
-        distance_values = [result.distances for result in self.results[start_idx:]]
+        function_values = [
+            result.heights for result in self.results[start_idx:]]
+        distance_values = [
+            result.distances for result in self.results[start_idx:]]
 
         function_values = pad_list(function_values)
 
@@ -489,18 +494,19 @@ class AlgorithmInstance:
         ax2.set_ylim(10, 2e6)
 
         plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
-        
+
     def plot_stacked_graph(self, img_path=None, excluding_first=True, mode='last'):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
         start_idx = 1 if excluding_first else 0
         results = self.results[start_idx:]
-        function_values = pad_list([result.heights for result in results], mode=mode)
+        function_values = pad_list(
+            [result.heights for result in results], mode=mode)
         # $[0, 600)$ & Lowland areas\\
         # $[600, 1000)$ & Mountainous areas\\
         # $[1000, 1100)$ & Approximately top 135 Munros \& 5 Welsh `Furths' \\
-        # $[1100, 1150)$ & Approximately top 50 Munros \\ 
+        # $[1100, 1150)$ & Approximately top 50 Munros \\
         # $[1150, 1215)$ & Approximately top 25 Munros \\
         # $[1215, 1235)$ & Wider Ben Nevis Massif (top 9 Munros) \\ % 1 point
         # $[1235, 1297)$ & Caringorm Plateau (top 6 Munros) \\ % 2 points
@@ -580,14 +586,13 @@ class AlgorithmInstance:
             else:
                 label = '(Terminated)'
                 color = (1, 1, 1, 1)
-            
+
             ax.fill_between(
                 range(len(cnts)),
                 group_cnts[i - 1] if i > 0 else [0] * len(cnts),
                 group_cnts[i],
                 color=color,
             )
-
 
             legend_elements.append(
                 Patch(
@@ -599,7 +604,7 @@ class AlgorithmInstance:
         fig.legend(
             handles=legend_elements[::-1],
             loc='upper left',
-            bbox_to_anchor=(1, 0.9) 
+            bbox_to_anchor=(1, 0.9)
         )
 
         fig.suptitle(

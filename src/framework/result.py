@@ -37,7 +37,7 @@ class Result:
     ):
         """
         Class for a result of an algorithm.
-        
+
         Parameters
         ----------
         ret_point : tuple
@@ -79,7 +79,7 @@ class Result:
             self.len_points = len_points
         else:
             self.len_points = len(self.points)
-        
+
         if heights is None:
             self.heights = self.get_heights()
         else:
@@ -89,7 +89,7 @@ class Result:
         self.message = message
 
         if self.points.size == 0:
-            assert is_success is not None,\
+            assert is_success is not None, \
                 'A partial result must have `is_success` and `eval_num`'
 
         if is_success is None:
@@ -97,10 +97,11 @@ class Result:
         else:
             self.is_success, self.eval_num, self.gary_score = is_success, eval_num, gary_score
 
-        self.set_info(info, algorithm_name, algorithm_version, instance_index, result_index)
-    
+        self.set_info(info, algorithm_name, algorithm_version,
+                      instance_index, result_index)
+
     def set_info(
-        self, 
+        self,
         info=None,
         algorithm_name=None,
         algorithm_version=None,
@@ -113,7 +114,7 @@ class Result:
             'instance_index': instance_index,
             'result_index': result_index,
         }
-        if None in self.info.values() and info is not None: 
+        if None in self.info.values() and info is not None:
             self.info = info
 
     def get_heights(self):
@@ -124,7 +125,6 @@ class Result:
     def distances(self):
         """Calcuate distances to Ben Nevis for all visited points."""
         return np.array([_dist_to_ben(*p) for p in self.points])
-
 
     def success_eval(self):
         """Return a tuple, (is_success, eval_num, gary_score), indicating if the result is
@@ -140,7 +140,7 @@ class Result:
             max_height = max(h, max_height)
             if h >= SUCCESS_HEIGHT:
                 return True, i, 10
-        
+
         gary_score = 0
         for g_h, g_p in GARY_SCORE_CONFIG:
             if max_height >= g_h:
@@ -151,7 +151,7 @@ class Result:
 
     def __repr__(self) -> str:
         return str(self.to_dict())
-    
+
     def to_dict(self, partial=True):
         def to_float_list(t):
             x, y = t
@@ -177,7 +177,7 @@ class Result:
 
         if not partial:
             res['points'] = [to_float_list(p) for p in self.points]
-        
+
         return res
 
     @property

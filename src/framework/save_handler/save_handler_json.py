@@ -6,10 +6,12 @@ from ..config import logger
 from collections import defaultdict
 from .save_handler import SaveHandler
 
+
 def dict2str(d: dict):
     parts = [f"{key}-{d[key]}" for key in sorted(d.keys())]
     name = "|".join(parts)
     return name
+
 
 class SaveHandlerJSON(SaveHandler):
     def __init__(self, directory='data', database='test'):
@@ -17,7 +19,7 @@ class SaveHandlerJSON(SaveHandler):
         self.database = database
         self.results_directory = os.path.join(directory, f'{database}_results')
         self.ensure_directory_exists()
-    
+
     def enumerate_results(self):
         jsons = os.listdir(self.results_directory)
         for json_path in jsons:
@@ -39,12 +41,12 @@ class SaveHandlerJSON(SaveHandler):
     def save_result(self, result, partial=True):
         if None in list(result.info.values()):
             logger.warning('Saving a result with incomplete info!')
-        
+
         result_dict = result.to_dict(partial=partial)
 
         # Create a unique filename based on result.info
         result_filename = os.path.join(
-            self.results_directory, 
+            self.results_directory,
             dict2str(result.info) + ".json")
 
         # Save the result data to the new JSON file
@@ -53,15 +55,16 @@ class SaveHandlerJSON(SaveHandler):
 
     def find_results(self, query, partial=True):
         filtered_results = []
-        
+
         for result_data in self.enumerate_results():
-            matches_query = all(result_data[key] == query[key] for key in query)
+            matches_query = all(
+                result_data[key] == query[key] for key in query)
             if matches_query:
                 filtered_result = result_data.copy()
                 if partial and 'points' in filtered_result:
                     del filtered_result['points']
                 filtered_results.append(Result(**filtered_result))
-        
+
         filtered_results.sort(key=lambda result: result.info['result_index'])
         return filtered_results
 
