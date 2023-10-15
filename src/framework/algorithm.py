@@ -4,6 +4,9 @@ import optuna
 
 
 class Algorithm:
+    """
+    Class for an algorithm. An algorithm contains a function 
+    """
     def __init__(self,
                  name: str,
                  func,
