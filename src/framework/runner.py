@@ -32,7 +32,11 @@ def optimizer(opt):
 
     Returns
     -------
-    function, which can be used in the constructor of ``Algorithm``
+    function, which takes three arguments: ``rand_seed``, ``init_guess``, and ``trial``,
+    and returns a ``Result`` object. ``rand_seed`` is the random seed used for a run,
+    ``init_guess`` is the initial guess for a run, and ``trial`` is the ``Trial`` object
+    used for specifying the hyper-parameters of an algorithm instance. This function
+    should be used as the ``func`` argument of ``Algorithm``.
     """
 
     @wraps(opt)

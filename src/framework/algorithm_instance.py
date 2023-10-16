@@ -35,27 +35,63 @@ def pad_list(ls, mode='last'):
 
 
 class AlgorithmInstance:
+    """
+    Class for an algorithm instance. This class is used to represent an
+    instance of an algorithm with a specific set of hyper-parameters, and
+    is used to run the instance and generate a list of ``Result``s.
+
+    Attributes
+    ----------
+    algorithm : Algorithm
+        The algorithm this instance belongs to.
+    trial : optuna.Trial
+        The optuna ``Trial`` object, used to specify the hyper-parameters of
+        this instance.
+    instance_index : int
+        The index of this instance. This is used to distinguish between
+        different instances of the same algorithm. If None, the index will
+        be the same as the trial id. This is useful when the trial is
+        an optuna.FixedTrial object that you can specify hyper-parameters
+        manually, which does not have a trial id. In this case you specify
+        the index manually. Try to use a negative index to avoid conflicts
+        with the trial id.
+    results : list of Result
+        The list of results of this instance.
+    results_patial : bool
+        Whether the results are partial. If True, the results are not fully
+        loaded (i.e. without the list of evaluated points, heights, and trajectories).
+
+    Methods
+    -------
+    __call__(result_index)
+        Run this instance and return the result of the (result_index)-th run.
+
+    run_next()
+        Run this instance with the next result index and return the result.
+
+    run(save_handler, max_instance_fes, restart, save_partial, does_prune, measure)
+        Run this instance and save all results to self.results.
+
+    make_results_partial()
+        Make all results of this instance partial.
+
+    load_results(save_handler, partial)
+        Load all results saved for this instance.
+
+    performance_measures(excluding_first, max_instance_fes)
+        Return all the performance measures of the instance based on the results.
+
+    plot_convergence_graph(downsampling, img_path, excluding_first)
+        Plot a convergence graph across all results of the instance.
+
+    plot_stacked_graph(img_path, excluding_first, mode)
+        Plot a stacked graph for all results of the instance.
+
+    print_results()
+        Print all results of this instance.
+    """
+
     def __init__(self, algorithm, trial: optuna.Trial, instance_index=None):
-        """
-        Class for an algorithm instance. All results of this instance
-        previously saved will be loaded automatically.
-
-        Parameters
-        ----------
-        algorithm : Algorithm
-            The algorithm this instance belongs to.
-        trial : optuna.Trial
-            The optuna trial object.
-        instance_index : int
-            The index of this instance. This is used to distinguish between
-            different instances of the same algorithm. If None, the index will
-            be the same as the trial id. This is useful when the trial is
-            an optuna.FixedTrial object that you can specify hyper-parameters
-            manually, which does not have a trial id. In this case you specify
-            the index manually. Try to use a negative index to avoid conflicts
-            with the trial id.
-        """
-
         self.algorithm = algorithm
 
         self.results = []
