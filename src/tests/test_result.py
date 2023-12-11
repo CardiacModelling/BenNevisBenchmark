@@ -25,7 +25,8 @@ class TestResult(unittest.TestCase):
 
     def test_successful_result(self):
         x, y = nevis.ben().grid
-        points, heights, ret_height, ret_point = run_sample_opt(init_guess=(x + 200, y - 200))
+        points, heights, ret_height, ret_point = run_sample_opt(
+            init_guess=(x + 200, y - 200))
         result = Result(ret_point=ret_point,
                         ret_height=ret_height,
                         points=points)
@@ -51,7 +52,8 @@ class TestResult(unittest.TestCase):
 
     def test_partially_successful_result(self):
         x, y = nevis.macdui()[0].coords.grid
-        points, heights, ret_height, ret_point = run_sample_opt(init_guess=(x + 500, y - 200))
+        points, heights, ret_height, ret_point = run_sample_opt(
+            init_guess=(x + 500, y - 200))
         result = Result(ret_point=ret_point,
                         ret_height=ret_height,
                         points=points)

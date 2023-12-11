@@ -6,6 +6,7 @@ from framework import optimizer
 import scipy.optimize
 import nlopt
 
+
 def run_sample_opt(rand_seed=None, init_guess=None):
     f = nevis.linear_interpolant()
     x_max, y_max = nevis.dimensions()
@@ -15,7 +16,7 @@ def run_sample_opt(rand_seed=None, init_guess=None):
         heights.append(height)
         points.append(x)
         return -height
-    
+
     points = []
     heights = []
 
@@ -23,7 +24,7 @@ def run_sample_opt(rand_seed=None, init_guess=None):
         np.random.seed(rand_seed)
         a = np.random.rand() * x_max
         b = np.random.rand() * y_max
-    else: 
+    else:
         a, b = init_guess
 
     result = minimize(
@@ -43,13 +44,14 @@ def make_result(rand_seed=None, init_guess=None, info=None):
     return Result(
         ret_point=ret_point, ret_height=ret_height, points=points, info=info)
 
+
 @optimizer
 def run_dual_annealing(
-    f, 
-    x_max, 
-    y_max, 
-    rand_seed, 
-    init_guess, 
+    f,
+    x_max,
+    y_max,
+    rand_seed,
+    init_guess,
     **params
 ):
     ret = scipy.optimize.dual_annealing(
@@ -70,13 +72,14 @@ def run_dual_annealing(
         'message': str(ret.message),
     }
 
+
 @optimizer
 def run_mlsl(
-    f, 
-    x_max, 
-    y_max, 
-    rand_seed, 
-    init_guess, 
+    f,
+    x_max,
+    y_max,
+    rand_seed,
+    init_guess,
     population=None,
 ):
     opt = nlopt.opt(nlopt.G_MLSL, 2)
