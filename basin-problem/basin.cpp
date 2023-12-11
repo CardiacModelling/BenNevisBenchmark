@@ -91,20 +91,25 @@ void get_basins(
   double* h, size_t m, size_t n, 
   int* sn, 
   int* maxima, size_t maxima_length, 
-  int* label
+  int* label,
+  int* path_sum
 ) {
   memset(label, -1, m * n * sizeof(int));
-  auto q = new std::queue<std::pair<int, int>>; 
+  auto q = new std::queue<std::tuple<int, int, int>>; 
 
   for (size_t i = 0; i < maxima_length; i++) {
     int x = maxima[i * 2];
     int y = maxima[i * 2 + 1];
-    q->push(std::make_pair(x, y));
+
+    path_sum[i] = 1;
+
+    q->push(std::make_tuple(x, y, 1));
     label[x * n + y] = i;
 
     while (!q->empty()) {
-      const auto &[x, y] = q->front(); 
+      const auto &[x, y, path_len] = q->front(); 
       q->pop();
+      path_sum[i] += path_len;
       for (const auto &[dx, dy]: neighbors) {
         const int xp = x + dx; 
         const int yp = y + dy;
@@ -114,7 +119,7 @@ void get_basins(
         // if (x, y) is (xp, xp)'s steepest neighbour
         const auto &[dxp, dyp] = neighbors[snp];
         if (x == xp + dxp && y == yp + dyp) {
-          q->push(std::make_pair(xp, yp));
+          q->push(std::make_tuple(xp, yp, path_len + 1));
           label[xp * n + yp] = i;
         }
       }
@@ -127,7 +132,7 @@ void get_basins(
 }
 
 
-py::array_t<int> find_basins(
+py::tuple find_basins(
   py::array_t<double> h_array,
   py::array_t<int> sn_array,
   py::array_t<int> maxima_array
@@ -146,9 +151,12 @@ py::array_t<int> find_basins(
   py::array_t<int> label_array({m, n});
   int* label = static_cast<int*>(label_array.request().ptr);
 
-  get_basins(h, m, n, sn, maxima, maxima_length, label);
+  py::array_t<int> path_sum_array(maxima_length);
+  int* path_sum = static_cast<int*>(path_sum_array.request().ptr);
 
-  return label_array;
+  get_basins(h, m, n, sn, maxima, maxima_length, label, path_sum);
+
+  return py::make_tuple(label_array, path_sum_array);
 }
 
 py::array_t<int> count_basin_area(
