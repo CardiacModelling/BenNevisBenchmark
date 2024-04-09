@@ -10,14 +10,19 @@ const std::vector<std::pair<int, int>> neighbors = {
     {-1, -1}, {-1, 1}, {1, -1}, {1, 1},
 };
 
+// check if a coordinate (x, y) is within the valid range [0, m) \times [0, n)
 bool valid_coor(int m, int n, int x, int y) {
   return 0 <= x && x < m && 0 <= y && y < n; 
 }
 
 void get_maxima(
-  double* h, size_t m, size_t n, 
-  int* sn, 
-  std::vector<std::tuple<double, int, int>>* maxima_vec
+  // input:
+  double* h, size_t m, size_t n, // the height data and size
+  // output:
+  int* sn, // the index of the steepest neighbour 
+  std::vector<std::tuple<double, int, int>>* maxima_vec 
+  // the list of local maxima (-height, x, y), 
+  // sorted so that the highest appears first
 ) {
   memset(sn, -1, m * n * sizeof(int));
 
@@ -28,9 +33,18 @@ void get_maxima(
 
       for (size_t i = 0; i < neighbors.size(); i++) {
         const auto &[dx, dy] = neighbors[i];
+        // create the coordinate of a neighbour
         int nx = x + dx;
         int ny = y + dy;
+        // if it's not within the range forget about it
         if (!valid_coor(m, n, nx, ny)) { continue; }
+        // if current height < neighbour's height, 
+        // then current point is not a local maximum
+
+        // and we can update the steepest gradient from current point
+        // to any of its neighbour
+
+        // note that a local max may = some of its neighbour's height
         if (h[x * n + y] < h[nx * n + ny]) {
           local_max = false;
           double current_gradient = (h[nx * n + ny] - h[x * n + y]) / 
@@ -41,6 +55,8 @@ void get_maxima(
           }
         }
       }
+
+      // collect all local max in our vector
       if (local_max) {
           maxima_vec->emplace_back(-h[x * n + y], x, y);
       }
@@ -49,7 +65,7 @@ void get_maxima(
     }
     if (x % 200 == 0) std::cout << "\n";
   }
-
+  // we have used -height, so the highest will appear first after sorting
   std::sort(maxima_vec->begin(), maxima_vec->end());
 }
 
@@ -59,18 +75,27 @@ py::tuple find_maxima(py::array_t<double> h_array) {
         throw std::runtime_error("Input array must be 2-dimensional");
     }
 
+    // get data size from input
     py::buffer_info buf_info = h_array.request();
     size_t m = buf_info.shape[0];
     size_t n = buf_info.shape[1];
-    double* h = static_cast<double*>(buf_info.ptr);
+    double* h = static_cast<double*>(buf_info.ptr); 
+    // note that we need to get the underlying array
+    // from the py::array_t object to manipulate it
 
+    // init sn array
     py::array_t<int> sn_array({m, n});
     int* sn = static_cast<int*>(sn_array.request().ptr);
 
+    // init vect for local max
     auto maxima_vec = new std::vector<std::tuple<double, int, int>>;
 
+    // lauch the calculation!
     get_maxima(h, m, n, sn, maxima_vec);
 
+    // transfer the local max to a py::array_t
+    // we omit the height data because 
+    // 1) it saves storage 2) maxima_array can then be an 'int' array
     size_t maxima_length = maxima_vec->size();
     const size_t two = 2;
     py::array_t<int> maxima_array({maxima_length, two});
@@ -82,22 +107,31 @@ py::tuple find_maxima(py::array_t<double> h_array) {
     }
 
     delete maxima_vec;
-
+    // maxima_array is a (maxima_length, 2) array containing the x, y coords of 
+    // each local maximum, ordered from the highest to the lowest
+    // sn_array has the same shape as h, showing the index in [0,1,...,7] of the steepest neighbour
     return py::make_tuple(maxima_array, sn_array);
 }
 
 
 void get_basins(
-  double* h, size_t m, size_t n, 
-  int* sn, 
-  int* maxima, size_t maxima_length, 
-  int* label,
-  int* path_sum
+  // input:
+  double* h, size_t m, size_t n, // height data and size
+  int* sn, // the steepest_neighbour array
+  int* maxima, size_t maxima_length,  // coords of local max and num of them
+  // output:
+  int* label, // the same shape as h, label[x][y] = the index of local max b.o.a. (x, y) belong to
+  int* path_sum // the same shape as maxima, the sum of all paths of this b.o.a.
 ) {
+  // initially all points are unvisited
   memset(label, -1, m * n * sizeof(int));
+
+  // the queue for BFS
   auto q = new std::queue<std::tuple<int, int, int>>; 
 
   for (size_t i = 0; i < maxima_length; i++) {
+
+    // start from each of the local max
     int x = maxima[i * 2];
     int y = maxima[i * 2 + 1];
 
@@ -111,10 +145,16 @@ void get_basins(
       q->pop();
       path_sum[i] += path_len;
       for (const auto &[dx, dy]: neighbors) {
+        // expand the neighbours; we are going from high points to low points
+        // so we are trying to find a neighbour (xp, yp) such that 
+        // (x, y) is the s.n. of (xp, yp)
         const int xp = x + dx; 
         const int yp = y + dy;
         if (!valid_coor(m, n, xp, yp)) { continue; }
+
+        // the s.n. of (xp, yp)
         const int &snp = sn[xp * n + yp];
+        
         if (label[xp * n + yp] != -1 || snp == -1) { continue; }
         // if (x, y) is (xp, xp)'s steepest neighbour
         const auto &[dxp, dyp] = neighbors[snp];
