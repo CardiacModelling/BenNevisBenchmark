@@ -22,6 +22,11 @@ if __name__ == '__main__':
         maxima = np.load('res/maxima.npy')
         area = basin.count_basin_area(label, len(maxima), data, False)
         np.save('res/area-with-sea.npy', area)
+        print(np.sum(area))
+        del area
+        area = basin.count_basin_area(label, len(maxima), data, True)
+        np.save('res/area-ex-sea.npy', area)
+
     elif run_num == '1':
         label, maxima, path_sum = find_labels(data)
         np.save('res/maxima.npy', maxima)
