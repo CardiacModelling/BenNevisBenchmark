@@ -78,13 +78,13 @@ class AlgorithmInstance:
     load_results(save_handler, partial)
         Load all results saved for this instance.
 
-    performance_measures(excluding_first, max_instance_fes)
+    performance_measures(max_instance_fes)
         Return all the performance measures of the instance based on the results.
 
-    plot_convergence_graph(downsampling, img_path, excluding_first)
+    plot_convergence_graph(downsampling, img_path)
         Plot a convergence graph across all results of the instance.
 
-    plot_stacked_graph(img_path, excluding_first, mode)
+    plot_stacked_graph(img_path, mode)
         Plot a stacked graph for all results of the instance.
 
     print_results()
@@ -230,16 +230,13 @@ class AlgorithmInstance:
         if self.results:
             self.results_patial = partial
 
-    def performance_measures(self, excluding_first=False, max_instance_fes=None):
+    def performance_measures(self, max_instance_fes=None):
         """
         Return all the performance measures of the instance. It's safe to run this
         method if even the results are ``partial''.
 
         Parameters
         ----------
-        excluding_first : bool
-            Whether to exclude the first result, which is always close to Ben
-            Nevis.
         max_instance_fes : int
             The maximum number of function evaluations for a single instance. If
             not None, the results will be truncated to have at most this number
@@ -268,17 +265,16 @@ class AlgorithmInstance:
             - 'gary_ert': The GERT value based on Gary's score.
         """
 
-        start_idx = 0 if not excluding_first else 1
         results = []
         if max_instance_fes is not None:
-            for result in self.results[start_idx:]:
+            for result in self.results:
                 if max_instance_fes > 0:
                     results.append(result)
                     max_instance_fes -= result.eval_num
                 else:
                     break
         else:
-            results = self.results[start_idx:]
+            results = self.results
 
         run_num = len(results)
 
@@ -437,7 +433,7 @@ class AlgorithmInstance:
 
     #     plt.show()
 
-    def plot_convergence_graph(self, downsampling=1, img_path=None, excluding_first=True):
+    def plot_convergence_graph(self, downsampling=1, img_path=None):
         """
         Plot a convergence graph across all instances.
 
@@ -475,11 +471,10 @@ class AlgorithmInstance:
 
             return re_mean, re_0, re_25, re_50, re_75, re_100
 
-        start_idx = 1 if excluding_first else 0
         function_values = [
-            result.heights for result in self.results[start_idx:]]
+            result.heights for result in self.results]
         distance_values = [
-            result.distances for result in self.results[start_idx:]]
+            result.distances for result in self.results]
 
         function_values = pad_list(function_values)
 
@@ -531,12 +526,11 @@ class AlgorithmInstance:
 
         plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
 
-    def plot_stacked_graph(self, img_path=None, excluding_first=True, mode='last'):
+    def plot_stacked_graph(self, img_path=None, mode='last'):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
-        start_idx = 1 if excluding_first else 0
-        results = self.results[start_idx:]
+        results = self.results
         function_values = pad_list(
             [result.heights for result in results], mode=mode)
         # $[0, 600)$ & Lowland areas\\

@@ -18,7 +18,7 @@ class Randomiser:
         int
             The random seed for the index-th run.
         """
-        return index * 1033 + 1234
+        return index
 
     @staticmethod
     def get_init_guess(index: int) -> np.ndarray:
@@ -36,14 +36,10 @@ class Randomiser:
         np.ndarray
             The initial guess for the index-th run.
         """
-        if index == 0:
-            x, y = nevis.ben().grid
-            return np.array([x + 200, y - 200])
-        else:
-            current_seed = index * 1989 + 2923
-            np.random.seed(current_seed)
-            x_max, y_max = nevis.dimensions()
-            x = np.random.rand() * x_max
-            y = np.random.rand() * y_max
-            np.random.seed(None)
-            return np.array([x, y])
+
+        np.random.seed(index)
+        x_max, y_max = nevis.dimensions()
+        x = np.random.rand() * x_max
+        y = np.random.rand() * y_max
+        np.random.seed(None)
+        return np.array([x, y])
