@@ -162,5 +162,5 @@ cython_debug/
 .vscode
 res/
 *.txt
-*.ipynb
+# *.ipynb
 *.png
