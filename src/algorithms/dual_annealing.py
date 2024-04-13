@@ -69,7 +69,13 @@ def run_dual_annealing(
 
 
 dual_annealing = Algorithm(
-    'Dual Annealing',
-    run_dual_annealing,
-    version=3
+    name='Dual Annealing',
+    func=run_dual_annealing,
+    version=3,
+    default_params={
+        'initial_temp': 5230.0,
+        'restart_temp_ratio': 2e-5,
+        'visit': 2.62,
+        'accept': -5,
+    }
 )

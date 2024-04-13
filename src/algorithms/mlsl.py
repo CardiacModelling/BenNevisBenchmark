@@ -47,4 +47,7 @@ mlsl = Algorithm(
     name='MLSL',
     version=1,
     func=run_mlsl,
+    default_params={
+        'population': 4,
+    }
 )

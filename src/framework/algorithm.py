@@ -42,10 +42,13 @@ class Algorithm:
     def __init__(self,
                  name: str,
                  func,
+                 default_params=None,
                  version: int = 1):
         self.name = name
         self.func = func
         self.version = version
+
+        self.default_params = default_params
 
         self.best_instance = None
 
@@ -106,6 +109,11 @@ class Algorithm:
             storage=f'sqlite:///{db_path}',
             load_if_exists=True,
         )
+
+        # when running for the first time and when a set of
+        # default parameters is supplied
+        if len(study.trials) == 0 and self.default_params is not None:
+            study.enqueue_trial(self.default_params)
 
         study.optimize(objective, n_trials=iter_num)
         self.best_instance = AlgorithmInstance(self, study.best_trial)

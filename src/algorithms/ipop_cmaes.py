@@ -71,7 +71,12 @@ def run_ipop_cmaes(
 
 
 ipop_cmaes = Algorithm(
-    'IPOP_CMAES',
-    run_ipop_cmaes,
-    1
+    name='IPOP_CMAES',
+    func=run_ipop_cmaes,
+    version=1,
+    default_params={
+        'sigma0': 1.2e5,
+        'popsize_coeff': 2,
+        'popsize0': 6
+    }
 )
