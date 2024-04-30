@@ -5,9 +5,16 @@
 namespace py = pybind11;
 
 const double NEG_INF = -1e100;
+const double EPS = 1e-5;
 const std::vector<std::pair<int, int>> neighbors = {
-    {-1, 0}, {1, 0}, {0, -1}, {0, 1},
-    {-1, -1}, {-1, 1}, {1, -1}, {1, 1},
+    {1, 0}, 
+    {1, 1},
+    {0, 1},
+    {-1, 1}, 
+    {-1, 0}, 
+    {-1, -1},
+    {0, -1}, 
+    {1, -1}, 
 };
 
 // check if a coordinate (x, y) is within the valid range [0, m) \times [0, n)
@@ -15,6 +22,12 @@ bool valid_coor(int m, int n, int x, int y) {
   return 0 <= x && x < m && 0 <= y && y < n; 
 }
 
+double gradient(double* h, size_t n, int x1, int y1, int x2, int y2) {
+  int dx = x1 - x2;
+  int dy = y1 - y2;
+  return (h[x1 * n + y1] - h[x2 * n + y2]) / sqrt(dx * dx + dy * dy);
+}
+ 
 void get_maxima(
   // input:
   double* h, size_t m, size_t n, // the height data and size
@@ -25,6 +38,7 @@ void get_maxima(
   // sorted so that the highest appears first
 ) {
   memset(sn, -1, m * n * sizeof(int));
+  auto temp_maxima = new std::vector<std::pair<int, int>>;
 
   for (size_t x = 0; x < m; x++) {
     for (size_t y = 0; y < n; y++) {
@@ -47,8 +61,8 @@ void get_maxima(
         // note that a local max may = some of its neighbour's height
         if (h[x * n + y] < h[nx * n + ny]) {
           local_max = false;
-          double current_gradient = (h[nx * n + ny] - h[x * n + y]) / 
-            sqrt(dx * dx + dy * dy);
+          double current_gradient = gradient(h, n, nx, ny, x, y);
+
           if (current_gradient > max_gradient) {
             max_gradient = current_gradient;
             sn[x * n + y] = i;
@@ -58,13 +72,70 @@ void get_maxima(
 
       // collect all local max in our vector
       if (local_max) {
-          maxima_vec->emplace_back(-h[x * n + y], x, y);
+          temp_maxima->emplace_back(x, y);
       }
-
-      if (x % 200 == 0 && y % 200 == 0) std::cout << "."; 
+      // if (x % 200 == 0 && y % 200 == 0) std::cout << "."; 
     }
-    if (x % 200 == 0) std::cout << "\n";
+    // if (x % 200 == 0) std::cout << "\n";
   }
+
+  // now we go over all the local maxima again to perform the 'sideway moves'
+  for (auto &[x, y]: *temp_maxima) {
+    double max_gradient = NEG_INF;
+    int flat_neighbour_id = -1;
+
+    // we look at each neighbour (nx, ny) of (x, y)
+    for (size_t i = 0; i < neighbors.size(); i++) {
+      const auto &[dx, dy] = neighbors[i];
+      // create the coordinate of a neighbour
+      int nx = x + dx;
+      int ny = y + dy;
+      // if it's not within the range forget about it
+      if (!valid_coor(m, n, nx, ny)) { continue; }
+
+      // we want to find a neighbour (nx, ny) which has (almost) the same height as (x, y)
+      // such that (nx, ny) is not itself a local max, i.e. it has a steepest neighbour
+      if (abs(h[x * n + y] - h[nx * n + ny]) < EPS) {
+        if (i <= 3 && flat_neighbour_id == -1) flat_neighbour_id = i;
+
+        if (sn[nx * n + ny] >= 0) {
+          // for such a neighbour, we take its steepest neighbour (mx, my)
+          // calculate the gradient from (x, y) to (mx, my)
+          int j = sn[nx * n + ny];
+          int mx = nx + neighbors[j].first;
+          int my = ny + neighbors[j].second;
+
+          double current_gradient = gradient(h, n, mx, my, x, y);
+          if (current_gradient > max_gradient) {
+            max_gradient = current_gradient;
+
+            // we don't want another (x, y) to be using this sn 
+            // in this loop we should only use the sn created in the first go
+            sn[x * n + y] = i - 100;
+          }
+        }
+      }
+    }
+
+    // if we have a unique flat neighbour, which does not have a steepest neighbour
+    // we connect to it
+    // but we don't want a loop between the two! so the neighbour id must be 0, 1, 2, 3
+    if (sn[x * n + y] == -1 && flat_neighbour_id != -1) {
+      sn[x * n + y] = flat_neighbour_id - 100;
+    }
+
+    // if a local max (x, y) survived all these and its sn didn't get updated
+    // it is a *real* local max
+    if (sn[x * n + y] == -1) {
+      maxima_vec->emplace_back(-h[x * n + y], x, y);
+    }
+  }
+
+  // finally we recover the sn in a third go
+  for (auto &[x, y]: *temp_maxima) {
+    if (sn[x * n + y] < -1) sn[x * n + y] += 100;
+  }
+
   // we have used -height, so the highest will appear first after sorting
   std::sort(maxima_vec->begin(), maxima_vec->end());
 }
@@ -165,8 +236,8 @@ void get_basins(
       }
     }
 
-    if (i % 10000 == 0) {
-      std::cout << i << " / " << maxima_length << "\n";
+    if (i % 10000 == 0 || i == maxima_length - 1) {
+      std::cout << (i + 1) << " / " << maxima_length << "\n";
     }
   }
 }
