@@ -117,9 +117,11 @@ void get_maxima(
       }
     }
 
-    // if we have a unique flat neighbour, which does not have a steepest neighbour
-    // we connect to it
+    // if we do have any flat neighbour, and 
+    // all of our flat neighbours do not have a steepest neighbour,
+    // then we can simply connect to any of them
     // but we don't want a loop between the two! so the neighbour id must be 0, 1, 2, 3
+    // effectively we are connecting to the flat neighbour with the largest id among 0, 1, 2, 3
     if (sn[x * n + y] == -1 && flat_neighbour_id != -1) {
       sn[x * n + y] = flat_neighbour_id - FLAG;
     }
