@@ -16,6 +16,7 @@ const std::vector<std::pair<int, int>> neighbors = {
     {0, -1}, 
     {1, -1}, 
 };
+const int FLAG = 100;
 
 // check if a coordinate (x, y) is within the valid range [0, m) \times [0, n)
 bool valid_coor(int m, int n, int x, int y) {
@@ -74,9 +75,8 @@ void get_maxima(
       if (local_max) {
           temp_maxima->emplace_back(x, y);
       }
-      // if (x % 200 == 0 && y % 200 == 0) std::cout << "."; 
     }
-    // if (x % 200 == 0) std::cout << "\n";
+    if ((x % 200) == 0) std::cout << "Progress of finding local max: " << x << " / " << m << "\n";
   }
 
   // now we go over all the local maxima again to perform the 'sideway moves'
@@ -111,7 +111,7 @@ void get_maxima(
 
             // we don't want another (x, y) to be using this sn 
             // in this loop we should only use the sn created in the first go
-            sn[x * n + y] = i - 100;
+            sn[x * n + y] = i - FLAG;
           }
         }
       }
@@ -121,7 +121,7 @@ void get_maxima(
     // we connect to it
     // but we don't want a loop between the two! so the neighbour id must be 0, 1, 2, 3
     if (sn[x * n + y] == -1 && flat_neighbour_id != -1) {
-      sn[x * n + y] = flat_neighbour_id - 100;
+      sn[x * n + y] = flat_neighbour_id - FLAG;
     }
 
     // if a local max (x, y) survived all these and its sn didn't get updated
@@ -133,7 +133,7 @@ void get_maxima(
 
   // finally we recover the sn in a third go
   for (auto &[x, y]: *temp_maxima) {
-    if (sn[x * n + y] < -1) sn[x * n + y] += 100;
+    if (sn[x * n + y] < -1) sn[x * n + y] += FLAG;
   }
 
   // we have used -height, so the highest will appear first after sorting
@@ -196,49 +196,59 @@ void get_basins(
 ) {
   // initially all points are unvisited
   memset(label, -1, m * n * sizeof(int));
+  int* path_length = new int[m * n]; 
+  auto idx_map = new std::map<std::pair<int, int>, int>;
+  for (size_t i = 0; i < maxima_length; i++) { 
+    path_sum[i] = 1; 
+    int mx = maxima[i * 2];
+    int my = maxima[i * 2 + 1];
+    (*idx_map)[std::make_pair(mx, my)] = i + 1;
+    path_length[mx * n + my] = 1;
+    label[mx * n + my] = i;
+  }
 
-  // the queue for BFS
-  auto q = new std::queue<std::tuple<int, int, int>>; 
+  auto vec = new std::vector<std::pair<int, int>>;
+  for (size_t x = 0; x < m; x++) {
+    for (size_t y = 0; y < n; y++) {
+      // if this point has been searched before, ignore
+      if (label[x * n + y] != -1) { continue; }
+      
+      vec->clear();
+      // we begin from (x, y) and we simply move according to sn
+      // whilst recording all the points we visist
+      int i = x; int j = y;
+      vec->emplace_back(i, j);
+      while (sn[i * n + j] != -1 && label[i * n + j] == -1) {
+          int t = sn[i * n + j];
+          i += neighbors[t].first;
+          j += neighbors[t].second;
+          vec->emplace_back(i, j);
+      }
+      // at this point we should either end up at a local maxima (i, j), 
+      // or we reach a point which has been labelled before
 
-  for (size_t i = 0; i < maxima_length; i++) {
+      // get the index of the local maximum
+      int idx = (sn[i * n + j] == -1) ? ((*idx_map)[std::make_pair(i, j)] - 1) : label[i * n + j];
 
-    // start from each of the local max
-    int x = maxima[i * 2];
-    int y = maxima[i * 2 + 1];
+      // this shouldn't happen
+      if (idx == -1) {
+        std::cerr << "Maxima not included in the array!! " << i << " " << j << "\n";
+        continue;
+      }
 
-    path_sum[i] = 1;
-
-    q->push(std::make_tuple(x, y, 1));
-    label[x * n + y] = i;
-
-    while (!q->empty()) {
-      const auto &[x, y, path_len] = q->front(); 
-      q->pop();
-      path_sum[i] += path_len;
-      for (const auto &[dx, dy]: neighbors) {
-        // expand the neighbours; we are going from high points to low points
-        // so we are trying to find a neighbour (xp, yp) such that 
-        // (x, y) is the s.n. of (xp, yp)
-        const int xp = x + dx; 
-        const int yp = y + dy;
-        if (!valid_coor(m, n, xp, yp)) { continue; }
-
-        // the s.n. of (xp, yp)
-        const int &snp = sn[xp * n + yp];
-        
-        if (label[xp * n + yp] != -1 || snp == -1) { continue; }
-        // if (x, y) is (xp, xp)'s steepest neighbour
-        const auto &[dxp, dyp] = neighbors[snp];
-        if (x == xp + dxp && y == yp + dyp) {
-          q->push(std::make_tuple(xp, yp, path_len + 1));
-          label[xp * n + yp] = i;
-        }
+      // delete the last point (which has been labelled already, whether it's a local max or not)
+      vec->pop_back();
+      // the length of the path from (x, y) to the local maximum
+      int l = vec->size() + path_length[i * n + j] ;
+      // label all the point recorded with the local maximum index
+      for (auto &[px, py]: *vec) {
+        path_sum[idx] += l; 
+        path_length[px * n + py] = l;
+        label[px * n + py] = idx;
+        l--;
       }
     }
-
-    if (i % 10000 == 0 || i == maxima_length - 1) {
-      std::cout << (i + 1) << " / " << maxima_length << "\n";
-    }
+    if ((x % 200) == 0) std::cout << "Progress of labelling b.o.a.: " << x << " / " << m << "\n";
   }
 }
 
@@ -289,6 +299,12 @@ py::array_t<int> count_basin_area(
   for (size_t i = 0; i < m; i++) {
     for (size_t j = 0; j < n; j++) {
       const int &x = label[i * n + j];
+
+      // this shouldn't happen
+      if (!(0 <= x && x < (int)basin_num)) {
+        std::cerr << "Invalid label at (i, j) with value x found! where (i, j, x) = (" << i << ", " << j << ", " << x << ")\n";
+      }
+
       if (!excluding_sea || h[i * n + j] >= 0) {
         area[x]++;
       }

@@ -6,7 +6,7 @@ import numpy as np
 def find_labels(h):
     maxima, sn = basin.find_maxima(h)
     label, path_sum = basin.find_basins(h, sn, maxima)
-    return label, maxima, path_sum
+    return label, sn, maxima, path_sum
 
 
 if __name__ == '__main__':
@@ -28,8 +28,9 @@ if __name__ == '__main__':
         np.save('res/area-ex-sea.npy', area)
 
     elif run_num == '1':
-        label, maxima, path_sum = find_labels(data)
+        label, sn, maxima, path_sum = find_labels(data)
         np.save('res/maxima.npy', maxima)
+        np.save('res/sn.npy', sn)
         np.save('res/label.npy', label)
         np.save('res/path_sum.npy', path_sum)
     else:
