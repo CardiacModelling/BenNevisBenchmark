@@ -58,8 +58,6 @@ void get_maxima(
 
         // and we can update the steepest gradient from current point
         // to any of its neighbour
-
-        // note that a local max may = some of its neighbour's height
         if (h[x * n + y] < h[nx * n + ny]) {
           local_max = false;
           double current_gradient = gradient(h, n, nx, ny, x, y);
