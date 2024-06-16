@@ -32,6 +32,7 @@ twice to avoid memory overflow (at least I think this is why it would die if I t
 There is also a testing script for a small example in `test.py`.
 
 The note books in `./ipynb`:
+- `check.ipynb` runs some checks to see if the calculated data is reasonable;
 - `fig-1.ipynb` plots (entire map + Ben Nevis + Ben Macdui + height histogram) figure;
 - `plot-boa.ipynb` gives a method for plotting the b.o.a. labels over the height map;
 - `largest-area.ipynb` investigates the local maxima with the largest b.o.a. areas (excluding seas);
