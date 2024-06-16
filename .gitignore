@@ -171,3 +171,5 @@ basin/
 # src/*.ipynb
 src/da
 src/mlsl
+
+run.py
