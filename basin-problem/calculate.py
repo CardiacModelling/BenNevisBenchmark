@@ -29,6 +29,7 @@ if __name__ == '__main__':
 
     elif run_num == '1':
         label, sn, maxima, path_sum = find_labels(data)
+        print(len(maxima), 'is the nubmer of maxima!')
         np.save('res/maxima.npy', maxima)
         np.save('res/sn.npy', sn)
         np.save('res/label.npy', label)
