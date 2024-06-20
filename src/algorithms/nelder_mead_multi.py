@@ -44,6 +44,6 @@ def run_nelder_mead_multi(
 
 nelder_mead_multi = Algorithm(
     name='Nelder-Mead Multi',
-    version=1,
+    version=2,
     func=run_nelder_mead_multi,
 )

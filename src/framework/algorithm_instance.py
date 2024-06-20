@@ -283,6 +283,12 @@ class AlgorithmInstance:
         ret_heights = []
 
         gary_score_sum = 0
+
+        # we make it so that in any given window of MAX_INSTANCE_FES
+        # gary score can be gained only once, except when Ben Nevis is found
+        current_gary_score = 0
+        current_instance_fes = MAX_FES
+
         for result in results:
             is_success, eval_cnt = result.is_success, result.eval_num
             if is_success:
@@ -290,7 +296,18 @@ class AlgorithmInstance:
             else:
                 failed_evals.append(eval_cnt)
             ret_heights.append(result.ret_height)
-            gary_score_sum += result.gary_score
+
+            if is_success:
+                gary_score_sum += result.gary_score
+                current_gary_score = 0
+                current_instance_fes = MAX_FES
+            else:
+                current_gary_score = max(current_gary_score, result.gary_score)
+                current_instance_fes -= eval_cnt
+                if current_instance_fes <= 0:
+                    gary_score_sum += current_gary_score
+                    current_gary_score = 0
+                    current_instance_fes = MAX_FES
 
         success_cnt = len(success_evals)
         success_eval_cnt = sum(success_evals)
