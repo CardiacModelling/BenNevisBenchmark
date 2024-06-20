@@ -284,7 +284,7 @@ class AlgorithmInstance:
 
         gary_score_sum = 0
 
-        # we make it so that in any given window of MAX_INSTANCE_FES
+        # we make it so that in any given window of MAX_FES
         # gary score can be gained only once, except when Ben Nevis is found
         current_gary_score = 0
         current_instance_fes = MAX_FES
@@ -298,16 +298,22 @@ class AlgorithmInstance:
             ret_heights.append(result.ret_height)
 
             if is_success:
+                # when Ben Nevis is found, add gary_score immediately
                 gary_score_sum += result.gary_score
                 current_gary_score = 0
                 current_instance_fes = MAX_FES
             else:
+                # otherwise, add only once per MAX_FES function evals
                 current_gary_score = max(current_gary_score, result.gary_score)
                 current_instance_fes -= eval_cnt
                 if current_instance_fes <= 0:
                     gary_score_sum += current_gary_score
                     current_gary_score = 0
                     current_instance_fes = MAX_FES
+
+        # add the last batch
+        gary_score_sum += current_gary_score
+        current_gary_score = 0
 
         success_cnt = len(success_evals)
         success_eval_cnt = sum(success_evals)
