@@ -34,6 +34,22 @@ def pad_list(ls, mode='last'):
         raise ValueError('Unknown mode.')
 
 
+def float_to_latex(float_number):
+    # convert the float number to latex format
+    import math
+    if float('inf') == float_number:
+        return "\\( +\\infty \\)"
+    # Extracting the exponent part
+    exponent = int(math.floor(math.log10(abs(float_number))))
+
+    # Extracting the mantissa part
+    mantissa = float_number / (10 ** exponent)
+
+    # Formatting the float number in the LaTeX style format
+    latex_formatted_number = "\\({:.2f} \\times 10^{{{}}}\\)".format(mantissa, exponent)
+    return latex_formatted_number
+
+
 class AlgorithmInstance:
     """
     Class for an algorithm instance. This class is used to represent an
@@ -670,3 +686,26 @@ class AlgorithmInstance:
         ax.set_xlabel('Number of function evals')
         ax.set_ylabel('Number of runs')
         plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
+
+    def params_to_latex(self, int_fields=[]):
+        d = self.trial.params
+        for k, v in d.items():
+            kk = k.replace('_', '\\_')
+            if k in int_fields:
+                print(f'& \\texttt{{{kk}}} & {v} \\\\')
+            else:
+                print(f'& \\texttt{{{kk}}} & {self.float_to_latex(v)} \\\\')
+
+    def performance_to_latex(self):
+        run_num = len(self.results)
+        d = self.performance_measures()
+        sr = d['success_rate']
+        ah = d['avg_height']
+        ert = d['ert']
+        gert = d['gary_ert']
+        print(self.algorithm.name.replace('_', ' '), end='\t')
+        print(f'& {run_num}', end='\t')
+        print(f'& {round(sr * 100)}\\%', end='\t')
+        print(f'& {round(ah)}', end='\t')
+        print(f'& {float_to_latex(ert)} ', end='\t')
+        print(f'& {float_to_latex(gert)} ', end='\\\\')
