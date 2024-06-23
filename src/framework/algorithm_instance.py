@@ -6,6 +6,8 @@ from .config import MAX_FES, MAX_INSTANCE_FES, logger
 from .randomiser import Randomiser
 from tqdm import tqdm
 import optuna
+from collections import namedtuple
+from functools import cached_property
 
 
 def pad_list(ls, mode='last'):
@@ -246,7 +248,44 @@ class AlgorithmInstance:
         if self.results:
             self.results_patial = partial
 
-    def performance_measures(self, max_instance_fes=None):
+    @cached_property
+    def restart_results(self):
+        RestartResult = namedtuple('RestartResult', [
+            'gary_score',
+            'is_success',
+            'eval_num',
+            'ret_height',
+            'heights',
+            'distances',
+        ])
+        restart_results = []
+
+        gary_score, is_success, eval_num, ret_height = 0, False, 0, 0
+        heights, distances = np.array([]), np.array([])
+
+        for i, result in enumerate(self.results):
+            eval_num += result.eval_num
+            gary_score = max(gary_score, result.gary_score)
+            ret_height = max(ret_height, result.ret_height)
+            is_success = (is_success or result.is_success)
+            heights = np.concatenate((heights, result.heights))
+            distances = np.concatenate((distances, result.distances))
+
+            if is_success or eval_num >= MAX_FES or i == len(self.results) - 1:
+                restart_results.append(RestartResult(
+                    gary_score=gary_score,
+                    is_success=is_success,
+                    eval_num=eval_num,
+                    ret_height=ret_height,
+                    heights=heights,
+                    distances=distances,
+                ))
+                gary_score, is_success, eval_num, ret_height = 0, False, 0, 0
+                heights, distances = np.array([]), np.array([])
+
+        return restart_results
+
+    def performance_measures(self, max_instance_fes=None, using_restart_results=True):
         """
         Return all the performance measures of the instance. It's safe to run this
         method if even the results are ``partial''.
@@ -281,16 +320,17 @@ class AlgorithmInstance:
             - 'gary_ert': The GERT value based on Gary's score.
         """
 
+        raw_results = self.restart_results if using_restart_results else self.results
         results = []
         if max_instance_fes is not None:
-            for result in self.results:
+            for result in raw_results:
                 if max_instance_fes > 0:
                     results.append(result)
                     max_instance_fes -= result.eval_num
                 else:
                     break
         else:
-            results = self.results
+            results = raw_results
 
         run_num = len(results)
 
@@ -300,11 +340,6 @@ class AlgorithmInstance:
 
         gary_score_sum = 0
 
-        # we make it so that in any given window of MAX_FES
-        # gary score can be gained only once, except when Ben Nevis is found
-        current_gary_score = 0
-        current_instance_fes = MAX_FES
-
         for result in results:
             is_success, eval_cnt = result.is_success, result.eval_num
             if is_success:
@@ -313,23 +348,7 @@ class AlgorithmInstance:
                 failed_evals.append(eval_cnt)
             ret_heights.append(result.ret_height)
 
-            if is_success:
-                # when Ben Nevis is found, add gary_score immediately
-                gary_score_sum += result.gary_score
-                current_gary_score = 0
-                current_instance_fes = MAX_FES
-            else:
-                # otherwise, add only once per MAX_FES function evals
-                current_gary_score = max(current_gary_score, result.gary_score)
-                current_instance_fes -= eval_cnt
-                if current_instance_fes <= 0:
-                    gary_score_sum += current_gary_score
-                    current_gary_score = 0
-                    current_instance_fes = MAX_FES
-
-        # add the last batch
-        gary_score_sum += current_gary_score
-        current_gary_score = 0
+            gary_score_sum += result.gary_score
 
         success_cnt = len(success_evals)
         success_eval_cnt = sum(success_evals)
@@ -472,7 +491,7 @@ class AlgorithmInstance:
 
     #     plt.show()
 
-    def plot_convergence_graph(self, downsampling=1, img_path=None):
+    def plot_convergence_graph(self, downsampling=1, img_path=None, using_restart_results=True):
         """
         Plot a convergence graph across all instances.
 
@@ -484,14 +503,16 @@ class AlgorithmInstance:
 
         assert not self.results_patial, "Results must be fully loaded."
 
+        results = self.restart_results if using_restart_results else self.results
+
         def calc(values_list, method):
-            results = []
+            results_ = []
             for values in values_list:
                 prefix = (np.maximum if method ==
                           'max' else np.minimum).accumulate(values)
-                results.append(prefix)
+                results_.append(prefix)
 
-            temp = np.array(results).T
+            temp = np.array(results_).T
 
             re_mean = []
             re_0 = []
@@ -511,9 +532,9 @@ class AlgorithmInstance:
             return re_mean, re_0, re_25, re_50, re_75, re_100
 
         function_values = [
-            result.heights for result in self.results]
+            result.heights for result in results]
         distance_values = [
-            result.distances for result in self.results]
+            result.distances for result in results]
 
         function_values = pad_list(function_values)
 
@@ -565,11 +586,11 @@ class AlgorithmInstance:
 
         plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
 
-    def plot_stacked_graph(self, img_path=None, mode='last'):
+    def plot_stacked_graph(self, img_path=None, mode='last', using_restart_results=True):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
-        results = self.results
+        results = self.restart_results if using_restart_results else self.results
         function_values = pad_list(
             [result.heights for result in results], mode=mode)
         # $[0, 600)$ & Lowland areas\\
