@@ -35,7 +35,7 @@ def run_differential_evolution(
         f,
         bounds=[(0, x_max), (0, y_max)],
         strategy='best1bin',
-        maxiter=2500,
+        maxiter=25000000,
         popsize=popsize,
         tol=0,
         atol=FTOL,
@@ -56,7 +56,7 @@ def run_differential_evolution(
 differential_evolution = Algorithm(
     name='Differential Evolution',
     func=run_differential_evolution,
-    version=1,
+    version=3,
     default_params={
         'popsize': 15,
         'recombination': 0.7,
