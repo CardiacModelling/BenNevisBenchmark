@@ -74,7 +74,7 @@ void get_maxima(
           temp_maxima->emplace_back(x, y);
       }
     }
-    if ((x % 200) == 0) std::cout << "Progress of finding local max: " << x << " / " << m << "\n";
+    if ((x % 200) == 0 || (x == m - 1)) std::cout << "Progress of finding local max: " << (x + 1) << " / " << m << "\n";
   }
 
   // we have a few rounds of iterations
@@ -281,7 +281,7 @@ void get_basins(
         l--;
       }
     }
-    if ((x % 200) == 0) std::cout << "Progress of labelling b.o.a.: " << x << " / " << m << "\n";
+    if ((x % 200) == 0 || (x == m - 1)) std::cout << "Progress of labelling b.o.a.: " << (x + 1) << " / " << m << "\n";
   }
 }
 
