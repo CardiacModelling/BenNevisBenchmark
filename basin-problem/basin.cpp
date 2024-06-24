@@ -77,63 +77,96 @@ void get_maxima(
     if ((x % 200) == 0) std::cout << "Progress of finding local max: " << x << " / " << m << "\n";
   }
 
-  // now we go over all the local maxima again to perform the 'sideway moves'
-  for (auto &[x, y]: *temp_maxima) {
-    double max_gradient = NEG_INF;
-    int flat_neighbour_id = -1;
+  // we have a few rounds of iterations
+  int iter = 0;
+  while (++iter) {
+    bool modified = false;
+    std::cout << "Current iteration of expanding local max: " << iter << "\n";
+    
+    // now we go over all the local maxima again to expand recursively
+    for (auto &[x, y]: *temp_maxima) {
+      if (sn[x * n + y] != -1) continue;
+      double max_gradient = NEG_INF;
 
-    // we look at each neighbour (nx, ny) of (x, y)
-    for (size_t i = 0; i < neighbors.size(); i++) {
-      const auto &[dx, dy] = neighbors[i];
-      // create the coordinate of a neighbour
-      int nx = x + dx;
-      int ny = y + dy;
-      // if it's not within the range forget about it
-      if (!valid_coor(m, n, nx, ny)) { continue; }
+      // we look at each neighbour (nx, ny) of (x, y)
+      for (size_t i = 0; i < neighbors.size(); i++) {
+        const auto &[dx, dy] = neighbors[i];
+        // create the coordinate of a neighbour
+        int nx = x + dx; int ny = y + dy;
+        // if it's not within the range forget about it
+        if (!valid_coor(m, n, nx, ny)) { continue; }
 
-      // we want to find a neighbour (nx, ny) which has (almost) the same height as (x, y)
-      // such that (nx, ny) is not itself a local max, i.e. it has a steepest neighbour
-      if (abs(h[x * n + y] - h[nx * n + ny]) < EPS) {
-        if (i <= 3 && flat_neighbour_id == -1) flat_neighbour_id = i;
+        // we want to find a neighbour (nx, ny) which has the same height as (x, y)
+        // such that (nx, ny) is not itself a local max, i.e. it has a steepest neighbour
+        if (h[x * n + y] == h[nx * n + ny] && sn[nx * n + ny] >= 0) {
+          // for such a neighbour, we first find its ((l+1)-th order) steepest neighbour (mx, my)
+          // which has a higher height, where l <= iter
+          int mx = nx, my = ny;
+          for (int l = 1; l <= iter; l++) {
+            int j = sn[mx * n + my];
+            mx += neighbors[j].first;
+            my += neighbors[j].second;
+            if (h[mx * n + my] > h[x * n + y]) break;
+          }
+          if (h[mx * n + my] == h[x * n + y]) continue;
 
-        if (sn[nx * n + ny] >= 0) {
-          // for such a neighbour, we take its steepest neighbour (mx, my)
           // calculate the gradient from (x, y) to (mx, my)
-          int j = sn[nx * n + ny];
-          int mx = nx + neighbors[j].first;
-          int my = ny + neighbors[j].second;
-
           double current_gradient = gradient(h, n, mx, my, x, y);
           if (current_gradient > max_gradient) {
             max_gradient = current_gradient;
-
-            // we don't want another (x, y) to be using this sn 
-            // in this loop we should only use the sn created in the first go
-            sn[x * n + y] = i - FLAG;
+            sn[x * n + y] = i;
+            modified = true;
           }
         }
       }
     }
+    
+    // if nothing has been modified in this round,
+    // then we have converged
+    if (!modified) break;
+  }
 
-    // if we do have any flat neighbour, and 
-    // all of our flat neighbours do not have a steepest neighbour,
-    // then we can simply connect to any of them
-    // but we don't want a loop between the two! so the neighbour id must be 0, 1, 2, 3
-    // effectively we are connecting to the flat neighbour with the largest id among 0, 1, 2, 3
-    if (sn[x * n + y] == -1 && flat_neighbour_id != -1) {
-      sn[x * n + y] = flat_neighbour_id - FLAG;
-    }
+  
+  // now we perform a BFS on all local maxima to connect them
+  // if they have the same height and are adjacent
+  std::cout << "Now doing BFS to connect flat local maxima... \n"; 
+  auto q = new std::queue<std::tuple<int, int>>; 
+  for (auto &[x, y]: *temp_maxima) { 
+    if (sn[x * n + y] != -1) continue;
+    q->push(std::make_tuple(x, y));
+    sn[x * n + y] = -2; // modify this value so it does not get connected later
 
-    // if a local max (x, y) survived all these and its sn didn't get updated
-    // it is a *real* local max
-    if (sn[x * n + y] == -1) {
-      maxima_vec->emplace_back(-h[x * n + y], x, y);
+    while (!q->empty()) {
+      auto [cx, cy] = q->front();
+      q->pop(); 
+
+      // we look at each neighbour (nx, ny) of (x, y)
+      for (size_t i = 0; i < neighbors.size(); i++) {
+        const auto &[dx, dy] = neighbors[i];
+        // create the coordinate of a neighbour
+        int nx = cx + dx; int ny = cy + dy;
+        // if it's not within the range forget about it
+        if (!valid_coor(m, n, nx, ny)) { continue; }
+        // if it is not a neighbour with the same height which is also a local maximum,
+        // forget about it
+        if (h[cx * n + cy] != h[nx * n + ny] || sn[nx * n + ny] != -1) continue;
+
+        // otherwise, we make a connection
+        sn[nx * n + ny] = (i + 4) % 8; // the reverse direction!
+
+        q->push(std::make_tuple(nx, ny));
+      }
     }
   }
 
-  // finally we recover the sn in a third go
-  for (auto &[x, y]: *temp_maxima) {
-    if (sn[x * n + y] < -1) sn[x * n + y] += FLAG;
+
+  for (auto &[x, y]: *temp_maxima) { 
+    // if a local max (x, y) survived all these
+    // then it is a *real* local max
+    if (sn[x * n + y] == -2) {
+      sn[x * n + y] = -1; // change the value back
+      maxima_vec->emplace_back(-h[x * n + y], x, y);
+    }
   }
 
   // we have used -height, so the highest will appear first after sorting
