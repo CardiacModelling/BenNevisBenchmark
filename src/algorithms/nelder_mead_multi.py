@@ -12,6 +12,7 @@ def run_nelder_mead_multi(
     init_guess,
     trial,
     get_budget,
+    mark_end_of_iteration,
 ):
     nlopt.srand(seed=rand_seed)
     np.random.seed(rand_seed)
@@ -35,6 +36,7 @@ def run_nelder_mead_multi(
         z_ = local_opt.last_optimum_value()
         if z_ < z:
             x, y, z = x_, y_, z_
+        mark_end_of_iteration()
 
     return {
         'x': np.array([x, y]),

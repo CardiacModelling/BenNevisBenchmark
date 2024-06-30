@@ -13,6 +13,7 @@ def run_pso(
     init_guess,
     trial: optuna.Trial,
     get_budget,
+    mark_end_of_iteration,
 ):
     np.random.seed(rand_seed)
     # Create pints error measure
@@ -58,6 +59,7 @@ def run_pso(
         if z1 < z:
             x, z = x1, z1
         i += 1
+        mark_end_of_iteration()
     return {
         'x': x,
         'z': z,

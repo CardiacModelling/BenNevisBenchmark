@@ -12,6 +12,7 @@ def run_differential_evolution(
     init_guess,
     trial: optuna.Trial,
     get_budget,
+    mark_end_of_iteration,
 ):
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.differential_evolution.html
     def callback(intermediate_result):

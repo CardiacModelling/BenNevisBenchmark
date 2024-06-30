@@ -13,6 +13,7 @@ def run_ipop_cmaes(
     init_guess,
     trial: optuna.Trial,
     get_budget,
+    mark_end_of_iteration,
 ):
     np.random.seed(rand_seed)
     # Use best found, instead of best guessed
@@ -63,6 +64,7 @@ def run_ipop_cmaes(
 
         population_size *= popsize_coeff
         i += 1
+        mark_end_of_iteration()
 
     return {
         'x': x,

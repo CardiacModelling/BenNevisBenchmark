@@ -18,11 +18,10 @@ def optimizer(opt):
         The optimization algorithm to decorate. The function should have the
         following signature:
 
-        def opt(f, x_max, y_max, rand_seed, init_guess, **kwargs):
+        def opt(f, x_max, y_max, rand_seed, init_guess, trial, get_budget):
             # MINIMIZE f((x, y)) subject to 0 <= x <= x_max and 0 <= y <= y_max
             # f(u, grad=None) returns the function value at u, and modifies
             # grad in place if grad is not None (as used in nlopt)
-            # kwargs contains the hyper-parameters of the algorithm
             return {
                 'x': (x_best, y_best),
                 'z': z_best,
@@ -43,6 +42,7 @@ def optimizer(opt):
     def func(rand_seed, init_guess, trial):
         points = []
         function_values = []
+        end_of_iterations = []
 
         def wrapper(u, grad=None):
             x, y = u
@@ -59,6 +59,9 @@ def optimizer(opt):
         def get_budget():
             return MAX_FES - len(function_values)
 
+        def mark_end_of_iteration():
+            end_of_iterations.append(len(function_values))
+
         x_max, y_max = nevis.dimensions()
 
         res_dict = opt(
@@ -69,6 +72,7 @@ def optimizer(opt):
             init_guess,
             trial,
             get_budget,
+            mark_end_of_iteration,
         )
 
         x = res_dict['x']
@@ -83,5 +87,6 @@ def optimizer(opt):
             message,
             function_values,
             trajectory=trajectory,
+            end_of_iterations=end_of_iterations,
         )
     return func

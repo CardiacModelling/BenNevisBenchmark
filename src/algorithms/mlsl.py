@@ -12,6 +12,7 @@ def run_mlsl(
     init_guess,
     trial,
     get_budget,
+    mark_end_of_iteration,
 ):
     opt = nlopt.opt(nlopt.G_MLSL, 2)
     nlopt.srand(seed=rand_seed)

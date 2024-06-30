@@ -34,6 +34,10 @@ if __name__ == '__main__':
         np.save('res/sn.npy', sn)
         np.save('res/label.npy', label)
         np.save('res/path_sum.npy', path_sum)
+        maxima_heights = []
+        for x, y in maxima:
+            maxima_heights.append(data[x, y])
+        np.save('res/maxima_heights.npy', np.array(maxima_heights))
     else:
         raise RuntimeError("Invalid input!")
 

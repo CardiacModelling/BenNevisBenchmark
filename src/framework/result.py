@@ -52,6 +52,9 @@ class Result:
         The index of the instance.
     result_index : int
         The index of the result.
+    end_of_iterations : list of ints
+        The indices of function evaluations which mark end of each of the iterations
+        within the run. Used in making animations.
 
     Methods
     -------
@@ -91,6 +94,7 @@ class Result:
         algorithm_version=None,
         instance_index=None,
         result_index=None,
+        end_of_iterations=[],
     ):
         self.ret_point = ret_point
         self.ret_height = ret_height
@@ -120,6 +124,13 @@ class Result:
 
         self.set_info(info, algorithm_name, algorithm_version,
                       instance_index, result_index)
+
+        if end_of_iterations == []:
+            # if there is no end_of_iterations given,
+            # then we consider the whole run as a single iteration
+            self.end_of_iterations = [self.len_points]
+        else:
+            self.end_of_iterations = end_of_iterations
 
     def set_info(
         self,

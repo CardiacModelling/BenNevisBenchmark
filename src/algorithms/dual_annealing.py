@@ -13,10 +13,14 @@ def run_dual_annealing(
     init_guess,
     trial: optuna.Trial,
     get_budget,
+    mark_end_of_iteration,
 ):
     def stopping_criterion(x, z, context):
         # Define your custom stopping condition here
         # For example, stop when the function value is below a threshold
+
+        # this function is called when a latest minimum is found
+        mark_end_of_iteration()
         if z < -SUCCESS_HEIGHT:
             return True
         else:

@@ -12,6 +12,7 @@ def run_nelder_mead(
     init_guess,
     trial,
     get_budget,
+    mark_end_of_iteration,
 ):
     nlopt.srand(seed=rand_seed)
     local_opt = nlopt.opt(nlopt.LN_NELDERMEAD, 2)
