@@ -6,6 +6,7 @@ from .algorithm_instance import AlgorithmInstance
 from .algorithm import Algorithm
 from .runner import optimizer
 from .randomiser import Randomiser
+from .animation import ResultAnimation
 
 del os
 
@@ -24,4 +25,5 @@ __all__ = [
     'Algorithm',
     'optimizer',
     'Randomiser',
+    'ResultAnimation',
 ]

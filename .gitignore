@@ -173,3 +173,5 @@ src/da
 src/mlsl
 
 run.py
+
+*.mp4
