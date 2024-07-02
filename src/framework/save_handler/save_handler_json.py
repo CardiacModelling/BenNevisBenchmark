@@ -61,8 +61,10 @@ class SaveHandlerJSON(SaveHandler):
                 result_data[key] == query[key] for key in query)
             if matches_query:
                 filtered_result = result_data.copy()
-                if partial and 'points' in filtered_result:
-                    del filtered_result['points']
+                if partial:
+                    for key in ['points', 'end_of_iterations']:
+                        if key in filtered_result:
+                            del filtered_result[key]
                 filtered_results.append(Result(**filtered_result))
 
         filtered_results.sort(key=lambda result: result.info['result_index'])

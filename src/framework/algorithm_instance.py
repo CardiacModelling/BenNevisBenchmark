@@ -257,31 +257,45 @@ class AlgorithmInstance:
             'ret_height',
             'heights',
             'distances',
+            'end_of_iterations',
+            'points',
         ])
         restart_results = []
 
         gary_score, is_success, eval_num, ret_height = 0, False, 0, 0
         heights, distances = np.array([]), np.array([])
+        end_of_iterations = []
+        points = None
 
         for i, result in enumerate(self.results):
-            eval_num += result.eval_num
             gary_score = max(gary_score, result.gary_score)
             ret_height = max(ret_height, result.ret_height)
             is_success = (is_success or result.is_success)
             heights = np.concatenate((heights, result.heights))
+            if points is None:
+                points = np.array(result.points)
+            else:
+                points = np.concatenate((points, result.points))
             distances = np.concatenate((distances, result.distances))
+            end_of_iterations.extend(list(i + eval_num for i in result.end_of_iterations))
+            eval_num += result.eval_num
 
             if is_success or eval_num >= MAX_FES or i == len(self.results) - 1:
-                restart_results.append(RestartResult(
-                    gary_score=gary_score,
-                    is_success=is_success,
-                    eval_num=eval_num,
-                    ret_height=ret_height,
-                    heights=heights,
-                    distances=distances,
-                ))
+                if points is not None:
+                    restart_results.append(RestartResult(
+                        gary_score=gary_score,
+                        is_success=is_success,
+                        eval_num=eval_num,
+                        ret_height=ret_height,
+                        heights=heights,
+                        distances=distances,
+                        points=points,
+                        end_of_iterations=end_of_iterations,
+                    ))
                 gary_score, is_success, eval_num, ret_height = 0, False, 0, 0
                 heights, distances = np.array([]), np.array([])
+                end_of_iterations = []
+                points = None
 
         return restart_results
 

@@ -209,6 +209,7 @@ class Result:
 
         if not partial:
             res['points'] = [to_float_list(p) for p in self.points]
+            res['end_of_iterations'] = list(int(i) for i in self.end_of_iterations)
 
         return res
 

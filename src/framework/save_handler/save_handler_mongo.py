@@ -36,6 +36,7 @@ class SaveHandlerMongo(SaveHandler):
         projection = {"_id": 0}
         if partial:
             projection['points'] = 0
+            projection['end_of_iterations'] = 0
         docs = self.res_collection.find(query, projection)
         return [Result(**doc) for doc in docs]
 

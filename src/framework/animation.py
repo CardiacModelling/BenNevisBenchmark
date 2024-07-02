@@ -432,5 +432,5 @@ class ResultAnimation:
 
         return ln11, ln12, ln21, ln22, ln31, ln32, ln41, ln42
 
-    def save(self, file_name='animation.mp4', writer='ffmpeg', fps=5):
+    def save(self, file_name='animation.mp4', writer='ffmpeg', fps=1):
         self.anim.save(file_name, writer=writer, fps=fps)
