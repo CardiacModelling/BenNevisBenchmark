@@ -7,7 +7,6 @@ from .randomiser import Randomiser
 from tqdm import tqdm
 import optuna
 from collections import namedtuple
-from functools import cached_property
 
 
 def pad_list(ls, mode='last'):
@@ -73,11 +72,9 @@ class AlgorithmInstance:
         manually, which does not have a trial id. In this case you specify
         the index manually. Try to use a negative index to avoid conflicts
         with the trial id.
-    results : list of Result
-        The list of results of this instance.
-    results_patial : bool
-        Whether the results are partial. If True, the results are not fully
-        loaded (i.e. without the list of evaluated points, heights, and trajectories).
+    cache_enabled : bool
+        Whether to cache `restart_results' for this instance. Default is False.
+        Only set to True when no more runs will be carried out for this instance.
 
     Methods
     -------
@@ -109,7 +106,7 @@ class AlgorithmInstance:
         Print all results of this instance.
     """
 
-    def __init__(self, algorithm, trial: optuna.Trial, instance_index=None):
+    def __init__(self, algorithm, trial: optuna.Trial, instance_index=None, cache_enabled=False):
         self.algorithm = algorithm
 
         self.results = []
@@ -117,6 +114,9 @@ class AlgorithmInstance:
 
         self.trial = trial
         self.instance_index = instance_index
+
+        self.cache_enabled = cache_enabled
+        self._restart_results = []
 
     @property
     def info(self):
@@ -248,8 +248,10 @@ class AlgorithmInstance:
         if self.results:
             self.results_patial = partial
 
-    @cached_property
+    @property
     def restart_results(self):
+        if self.cache_enabled and self._restart_results != []:
+            return self._restart_results
         RestartResult = namedtuple('RestartResult', [
             'gary_score',
             'is_success',
@@ -296,7 +298,7 @@ class AlgorithmInstance:
                 heights, distances = np.array([]), np.array([])
                 end_of_iterations = []
                 points = None
-
+        self._restart_results = restart_results
         return restart_results
 
     def performance_measures(self, max_instance_fes=None, using_restart_results=True):

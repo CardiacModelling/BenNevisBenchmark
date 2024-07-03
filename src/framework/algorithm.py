@@ -67,6 +67,7 @@ class Algorithm:
         direction='minimize',
         save_handler=None,
         max_instance_fes=MAX_INSTANCE_FES,
+        using_restart_results=True,
         plot_path=None,
         make_all_plots=True,
     ):
@@ -87,6 +88,9 @@ class Algorithm:
             The save handler to use for saving the results.
         max_instance_fes : int
             The maximum number of function evaluations for a single instance.
+        using_restart_results: bool
+            Whether we use restart results to calculate performance measures.
+            Set to False for a global algorithm which always exhaust the function evaluations.
         plot_path : string
             The path to save the plots.
         make_all_plots : bool
@@ -101,7 +105,7 @@ class Algorithm:
                     img_path=f'{plot_path}/{trial._trial_id}-c.png')
                 instance.plot_stacked_graph(
                     img_path=f'{plot_path}/{trial._trial_id}-s.png')
-            return instance.performance_measures()[measure]
+            return instance.performance_measures(using_restart_results=using_restart_results)[measure]
 
         study = optuna.create_study(
             direction=direction,
