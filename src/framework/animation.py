@@ -9,7 +9,7 @@ from matplotlib.animation import FuncAnimation
 
 
 def plot(boundaries=None, labels=None, trajectory=None, points=None,
-         gray_points=None,
+         gray_points=None, red_points=None,
          scale_bar=True, big_grid=False, small_grid=False,
          zoom=1 / 27, headless=False, verbose=False, fig=None, ax=None):
     """
@@ -250,6 +250,12 @@ def plot(boundaries=None, labels=None, trajectory=None, points=None,
             x, y, 'x', color='#D3D3D3',
             markeredgewidth=1, markersize=4, alpha=0.3)
 
+    if red_points is not None:
+        x, y = meters2indices(red_points[:, 0], red_points[:, 1])
+        ax.plot(
+            x, y, 'x', color='#ff0000',
+            markeredgewidth=1, markersize=4, alpha=1)
+
     # Show trajectory
     if trajectory is not None:
         x, y = meters2indices(trajectory[:, 0], trajectory[:, 1])
@@ -282,17 +288,28 @@ def plot(boundaries=None, labels=None, trajectory=None, points=None,
 
 
 class ResultAnimation:
-    def __init__(self, result, maxima_heights, interval=1000, blit=True, frame_num=None):
+    def __init__(self, result, maxima_heights, mode='iterations', interval=1000, blit=True, frame_num=None):
         self.result = result
         self.maxima_heights = maxima_heights
         self.best_height_so_far = np.min(self.maxima_heights)
-        if frame_num is None:
-            frame_num = len(result.end_of_iterations)
         plt.rcParams.update({'font.size': 14})
         self.fig = plt.figure(figsize=(10, 12))
-        self.anim = FuncAnimation(
-            self.fig, self.update,
-            frames=range(frame_num), init_func=self.init, interval=interval, blit=blit)
+        if mode == 'iterations':
+            if frame_num is None:
+                frame_num = len(result.end_of_iterations)
+            self.anim = FuncAnimation(
+                self.fig, self.update,
+                frames=range(frame_num), init_func=self.init, interval=interval, blit=blit)
+        elif mode == 'evaluations':
+            if frame_num is None:
+                frame_num = len(result.points)
+            self.current_iteration = 0
+            self.anim = FuncAnimation(
+                self.fig, self.update_evaluation,
+                range(frame_num), init_func=self.init, interval=interval, blit=False
+            )
+        else:
+            raise ValueError("Invalid mode; should be either 'iterations' or 'evaluations'.")
 
     def init(self):
         maxima_heights = self.maxima_heights
@@ -302,11 +319,12 @@ class ResultAnimation:
 
         # Create subplots
         # Span first two rows of the first column
-        ax1 = fig.add_subplot(gs[0:2, 0])
-        ax2 = fig.add_subplot(gs[0, 1])    # First row, second column
-        ax3 = fig.add_subplot(gs[1, 1])    # Second row, second column
+        self.ax1 = fig.add_subplot(gs[0:2, 0])
+        self.ax2 = fig.add_subplot(gs[0, 1])    # First row, second column
+        self.ax3 = fig.add_subplot(gs[1, 1])    # Second row, second column
         # Span the third row across both columns
-        ax4 = fig.add_subplot(gs[2, :])
+        self.ax4 = fig.add_subplot(gs[2, :])
+        ax1, ax2, ax3, ax4 = self.ax1, self.ax2, self.ax3, self.ax4
         ben_x, ben_y = nevis.ben().grid
         mac_h, mac_bdr = nevis.macdui()
         mac_hg = mac_h.coords.grid
@@ -401,6 +419,63 @@ class ResultAnimation:
 
         return self.ln11, self.ln12, self.ln21, self.ln22, self.ln31, self.ln32, self.ln41, self.ln42
 
+    def update_evaluation(self, i):
+        res = self.result
+        ln11, ln12, ln21, ln22, _, _, ln41, ln42 = self.ln11, self.ln12, self.ln21, self.ln22, \
+            self.ln31, self.ln32, self.ln41, self.ln42
+        m2i1, m2i2, _ = self.m2i1, self.m2i2, self.m2i3
+
+        if i == res.end_of_iterations[self.current_iteration]:
+            self.current_iteration += 1
+
+        j = self.current_iteration
+
+        if j == 0:
+            gray_points = None
+            points = res.points[:i+1]
+        else:
+            gray_points = res.points[:res.end_of_iterations[j - 1]]
+            points = res.points[res.end_of_iterations[j - 1]:i+1]
+
+        height = res.heights[i]
+
+        for (ln1, ln2), m2i in zip(
+                [[ln11, ln12], [ln21, ln22]], [m2i1, m2i2]):
+            if gray_points is not None:
+                x, y = m2i(gray_points[:, 0], gray_points[:, 1])
+                ln2.set_data(x, y)
+            x, y = m2i(points[:, 0], points[:, 1])
+            ln1.set_data(x, y)
+
+        b = 8e3
+        x, y = res.points[i]
+        # print("the value of x, y")
+        c = nevis.Coords(gridx=x, gridy=y)
+        h, d = nevis.Hill.nearest(c)
+        labels = {
+            h.name: h.coords,
+            # 'Current eval': c,
+        }
+        self.ax3.cla()
+        self.m2i3 = plot(
+            ax=self.ax3,
+            boundaries=[x - b * 2.125,
+                        x + b * 2.125,
+                        y - b * 1.65,
+                        y + b * 1.65],
+            zoom=1/1.5,
+            points=points,
+            gray_points=gray_points,
+            labels=labels,
+        )
+
+        self.best_height_so_far = max(self.best_height_so_far, height)
+        ln41.set_xdata([height])
+        ln42.set_xdata([self.best_height_so_far])
+
+        # we don't use blit
+        # return ln11, ln12, ln21, ln22, ln31, ln32, ln41, ln42
+
     def update(self, i):
         res = self.result
         ln11, ln12, ln21, ln22, ln31, ln32, ln41, ln42 = self.ln11, self.ln12, self.ln21, self.ln22, \
@@ -426,7 +501,8 @@ class ResultAnimation:
             ln1.set_data(x, y)
 
         max_height_this_iter = np.max(heights_this_iter)
-        self.best_height_so_far = max(self.best_height_so_far, max_height_this_iter)
+        self.best_height_so_far = max(
+            self.best_height_so_far, max_height_this_iter)
         ln41.set_xdata([max_height_this_iter])
         ln42.set_xdata([self.best_height_so_far])
 
