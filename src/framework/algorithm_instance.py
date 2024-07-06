@@ -548,9 +548,9 @@ class AlgorithmInstance:
             return re_mean, re_0, re_25, re_50, re_75, re_100
 
         function_values = [
-            result.heights for result in results]
+            result.heights[:MAX_FES] for result in results]
         distance_values = [
-            result.distances for result in results]
+            result.distances[:MAX_FES] for result in results]
 
         function_values = pad_list(function_values)
 
@@ -562,7 +562,7 @@ class AlgorithmInstance:
             function_values, 'max')
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
-        fig.suptitle(f'Performance of {self.algorithm.name}')
+        fig.suptitle(f'Aggregated convergence graphs for {self.algorithm.name}')
 
         ax1.set_xscale('log')  # log scale for x axis
         ax1.plot(x_values, re_mean, label='mean')
@@ -577,7 +577,7 @@ class AlgorithmInstance:
         ax1.fill_between(x_values, re_25, re_75, color='#5CA4FA', alpha=0.5)
         ax1.fill_between(x_values, re_0, re_100, color='#5CF7FA', alpha=0.25)
         ax1.legend(loc='lower right')
-        ax1.set_xlabel('Number of evaluations')
+        ax1.set_xlabel('Number of function evaluations')
         ax1.set_ylabel('Height')
 
         distance_values = pad_list(distance_values)
@@ -596,19 +596,19 @@ class AlgorithmInstance:
         ax2.fill_between(x_values, re_25, re_75, color='#5CA4FA', alpha=0.5)
         ax2.fill_between(x_values, re_0, re_100, color='#5CF7FA', alpha=0.25)
         ax2.legend(loc='upper right')
-        ax2.set_xlabel('Number of evaluations')
+        ax2.set_xlabel('Number of function evaluations')
         ax2.set_ylabel('Distance to Ben Nevis')
         ax2.set_ylim(10, 2e6)
 
         plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
 
-    def plot_stacked_graph(self, img_path=None, mode='last', using_restart_results=True):
+    def plot_stacked_graph(self, img_path=None, mode='last', using_restart_results=True, with_legends=True):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
         results = self.restart_results if using_restart_results else self.results
         function_values = pad_list(
-            [result.heights for result in results], mode=mode)
+            [result.heights[:MAX_FES] for result in results], mode=mode)
         # $[0, 600)$ & Lowland areas\\
         # $[600, 1000)$ & Mountainous areas\\
         # $[1000, 1100)$ & Approximately top 135 Munros \& 5 Welsh `Furths' \\
@@ -683,7 +683,7 @@ class AlgorithmInstance:
         for i, height in enumerate(height_bins):
             cnts = group_cnts[i]
 
-            low = height_bins[i - 1] if i > 0 else 0
+            low = height_bins[i - 1] if i > 0 else -100
             high = height
 
             if height_labels[i] != '(Terminated)':
@@ -707,20 +707,20 @@ class AlgorithmInstance:
                 )
             )
 
-        fig.legend(
-            handles=legend_elements[::-1],
-            loc='upper left',
-            bbox_to_anchor=(1, 0.9)
-        )
+        if with_legends:
+            fig.legend(
+                handles=legend_elements[::-1],
+                loc='upper left',
+                bbox_to_anchor=(1, 0.9)
+            )
 
         fig.suptitle(
-            'Number of runs reaching height levels at each function\n'
-            'evaluation for {} runs of {}'.format(
-                len(results),
+            'Height-band graph {} padding for {}'.format(
+                'without' if mode == 'terminate' else 'with',
                 self.algorithm.name
             ))
 
-        ax.set_xlabel('Number of function evals')
+        ax.set_xlabel('Number of function evaluations')
         ax.set_ylabel('Number of runs')
         plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
 
@@ -731,10 +731,10 @@ class AlgorithmInstance:
             if k in int_fields:
                 print(f'& \\texttt{{{kk}}} & {v} \\\\')
             else:
-                print(f'& \\texttt{{{kk}}} & {self.float_to_latex(v)} \\\\')
+                print(f'& \\texttt{{{kk}}} & {float_to_latex(v)} \\\\')
 
     def performance_to_latex(self):
-        run_num = len(self.results)
+        run_num = len(self.restart_results)
         d = self.performance_measures()
         sr = d['success_rate']
         ah = d['avg_height']
