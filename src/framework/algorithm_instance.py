@@ -31,6 +31,19 @@ def pad_list(ls, mode='last'):
                       1350 else 1500] * (length - len(lst)))
             for lst in ls
         ]
+    elif mode == 'edge':
+        # Ben Nevis should be an edge
+        result = []
+        for lst in ls:
+            last_value = lst[-1]
+            if 1340 <= last_value < 1350:
+                padding_num = min(1000, length - len(lst))
+                new_lst = np.append(np.append(lst, [last_value] * padding_num),
+                                    [1500] * (length - len(lst) - padding_num))
+            else:
+                new_lst = np.append(lst, [1500] * (length - len(lst)))
+            result.append(new_lst)
+        return result
     else:
         raise ValueError('Unknown mode.')
 
@@ -715,8 +728,7 @@ class AlgorithmInstance:
             )
 
         fig.suptitle(
-            'Height-band graph {} padding for {}'.format(
-                'without' if mode == 'terminate' else 'with',
+            'Height-band graph for {}'.format(
                 self.algorithm.name
             ))
 
