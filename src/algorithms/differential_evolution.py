@@ -1,6 +1,7 @@
 from framework import optimizer, Algorithm, SUCCESS_HEIGHT, FTOL
 import scipy.optimize
 import optuna
+import numpy as np
 
 
 @optimizer
@@ -32,36 +33,47 @@ def run_differential_evolution(
     mutation_high = trial.suggest_float('mutation_high', mutation_low, 2)
     mutation = mutation_low if not dithering else (mutation_low, mutation_high)
 
-    ret = scipy.optimize.differential_evolution(
-        f,
-        bounds=[(0, x_max), (0, y_max)],
-        strategy='best1bin',
-        maxiter=25000000,
-        popsize=popsize,
-        tol=0,
-        atol=FTOL,
-        mutation=mutation,
-        recombination=recombination,
-        seed=rand_seed,
-        callback=callback,
-        polish=polish,
-        x0=init_guess,
-        init='latinhypercube',
-    )
+    np.random.seed(rand_seed)
+
+    x, z = None, float('inf')
+    i = 0
+    while get_budget() > 0 and z > -SUCCESS_HEIGHT:
+        ret = scipy.optimize.differential_evolution(
+            f,
+            bounds=[(0, x_max), (0, y_max)],
+            strategy='best1bin',
+            maxiter=25000000,
+            popsize=popsize,
+            tol=0,
+            atol=FTOL,
+            mutation=mutation,
+            recombination=recombination,
+            seed=rand_seed,
+            callback=callback,
+            polish=polish,
+            x0=init_guess if i == 0 else [
+                np.random.random() * x_max, np.random.random() * y_max],
+            init='latinhypercube',
+        )
+        if ret.fun < z:
+            x, z = ret.x, ret.fun
+        i += 1
+        mark_end_of_iteration()
+
     return {
-        'x': ret.x,
-        'z': ret.fun,
+        'x': x,
+        'z': z,
     }
 
 
 differential_evolution = Algorithm(
     name='Differential Evolution',
     func=run_differential_evolution,
-    version=3,
+    version=5,
     default_params={
         'popsize': 15,
         'recombination': 0.7,
-        'polish': False,
+        'polish': True,
         'dithering': True,
         'mutation_low': 0.5,
         'mutation_high': 1,

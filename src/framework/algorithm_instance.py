@@ -537,8 +537,7 @@ class AlgorithmInstance:
         def calc(values_list, method):
             results_ = []
             for values in values_list:
-                prefix = (np.maximum if method ==
-                          'max' else np.minimum).accumulate(values)
+                prefix = method.accumulate(values)
                 results_.append(prefix)
 
             temp = np.array(results_).T
@@ -572,7 +571,7 @@ class AlgorithmInstance:
                              downsampling, downsampling)
 
         re_mean, re_0, re_25, re_50, re_75, re_100 = calc(
-            function_values, 'max')
+            function_values, np.maximum)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
         fig.suptitle(f'Aggregated convergence graphs for {self.algorithm.name}')
@@ -596,7 +595,7 @@ class AlgorithmInstance:
         distance_values = pad_list(distance_values)
 
         re_mean, re_0, re_25, re_50, re_75, re_100 = calc(
-            distance_values, 'min')
+            distance_values, np.minimum)
 
         ax2.set_xscale('log')  # log scale for x axis
         ax2.set_yscale('log')  # log scale for y axis
@@ -620,8 +619,10 @@ class AlgorithmInstance:
 
         assert not self.results_patial, "Results must be fully loaded."
         results = self.restart_results if using_restart_results else self.results
-        function_values = pad_list(
-            [result.heights[:MAX_FES] for result in results], mode=mode)
+        # we first truncate the results and then do a cumulative maximum
+        results_accumulated = [np.maximum.accumulate(result.heights[:MAX_FES])
+                               for result in results]
+        function_values = pad_list(results_accumulated, mode=mode)
         # $[0, 600)$ & Lowland areas\\
         # $[600, 1000)$ & Mountainous areas\\
         # $[1000, 1100)$ & Approximately top 135 Munros \& 5 Welsh `Furths' \\
