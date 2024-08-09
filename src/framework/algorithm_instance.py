@@ -614,7 +614,8 @@ class AlgorithmInstance:
 
         plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
 
-    def plot_stacked_graph(self, img_path=None, mode='last', using_restart_results=True, with_legends=True):
+    def plot_stacked_graph(self, img_path=None, mode='last',
+                           using_restart_results=True, with_legends=True, fig=None, ax=None):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
@@ -692,7 +693,8 @@ class AlgorithmInstance:
         def index_to_color(i):
             return plt.cm.tab20c(1 - (i + 1) / (len(height_bins)))
 
-        fig, ax = plt.subplots(1, 1)
+        if fig is None or ax is None:
+            fig, ax = plt.subplots(1, 1)
 
         for i, height in enumerate(height_bins):
             cnts = group_cnts[i]
@@ -728,7 +730,7 @@ class AlgorithmInstance:
                 bbox_to_anchor=(1, 0.9)
             )
 
-        fig.suptitle(
+        ax.set_title(
             'Height-band graph for {}'.format(
                 self.algorithm.name
             ))
