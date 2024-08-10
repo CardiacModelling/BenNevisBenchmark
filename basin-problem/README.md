@@ -18,9 +18,7 @@ maxima, sn = basin.find_maxima(h)
 # and calculate the sum of gradient ascending path lengths in each b.o.a.
 label, path_sum = basin.find_basins(h, sn, maxima)
 # calculate the area of each b.o.a. not excluding sea
-area = basin.count_basin_area(label, len(maxima), data, False)
-# calculate the area of each b.o.a. excluding sea
-area = basin.count_basin_area(label, len(maxima), data, True)
+area = basin.count_basin_area(label, len(maxima), data)
 ```
 
 But these have been written in the script `calculate.py`! It will help you save the calculation to some `.npy` files. Note: you need to run 

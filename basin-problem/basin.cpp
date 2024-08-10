@@ -316,8 +316,7 @@ py::tuple find_basins(
 py::array_t<int> count_basin_area(
   py::array_t<int> label_array, 
   size_t basin_num, 
-  py::array_t<double> h_array,
-  bool excluding_sea
+  py::array_t<double> h_array
 ) {
   py::array_t<int> area_array(basin_num);
   int* area = static_cast<int*>(area_array.request().ptr);
@@ -338,7 +337,7 @@ py::array_t<int> count_basin_area(
         std::cerr << "Invalid label at (i, j) with value x found! where (i, j, x) = (" << i << ", " << j << ", " << x << ")\n";
       }
 
-      if (!excluding_sea || h[i * n + j] >= 0) {
+      if (h[i * n + j] >= 0) {
         area[x]++;
       }
     }
