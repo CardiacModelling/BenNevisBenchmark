@@ -337,9 +337,7 @@ py::array_t<int> count_basin_area(
         std::cerr << "Invalid label at (i, j) with value x found! where (i, j, x) = (" << i << ", " << j << ", " << x << ")\n";
       }
 
-      if (h[i * n + j] >= 0) {
-        area[x]++;
-      }
+      area[x]++;
     }
   }
 
