@@ -1,6 +1,9 @@
 import basin
 import nevis
 import numpy as np
+import os
+
+os.makedirs('res', exist_ok=True)
 
 
 def find_labels(h):

@@ -12,7 +12,6 @@ An Ubuntu environment is assumed.
 cd basin-problem
 sudo apt install python3.10-dev g++
 python setup.py install
-makedir res
 ```
 and then run `python calculate.py` twice. Then `cd ..`.
 
