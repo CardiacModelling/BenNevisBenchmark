@@ -1,5 +1,26 @@
 # Benchmark Framework for Comparing Optimization Algorithms on `nevis`
 
+## Reproducing the figures and tables in the paper
+
+An Ubuntu environment is assumed.
+
+1. Use a Python virtual environment: 
+`python3 -m venv venv && source venv/bin/activate`.
+2. Install the required packages `pip install -r requirements.txt`.
+3. Run the the algorithm of finding local optima and their basin of attraction (as specified in `basin-problem/README.md`). In other words, you need to run:
+```bash
+cd basin-problem
+sudo apt install python3.10-dev g++
+python setup.py install
+makedir res
+```
+and then run `python calculate.py` twice. Then `cd ..`.
+
+4. Go to `./basin-problem/ipynb/` and run `fig-1.ipynb` and `table-1.ipynb` to produce Figure 1 and Table 1. 
+4. Create a directory `./result/`.
+5. `cd src`, then run `python3 run.py`. This script will run the hyper-parameter tuning process for each of the following algorithms: CMA-ES, Differential Evolution, Dual Annealing, MLSL, Nelder-Mead, and PSO.
+6. Go to `./ipynb/plots/` and run `all.ipynb`. You should then find in `./ipynb/plots/imgs/` three figures: `combined-agg.png`, `combined-hb.png` and `output-ert.png`, which correspond to Figures 2, 3, 4 in the paper. Tables 5 and 6 are also produced in this file.
+
 ## `./doc`
 
 Documents and presentation slides about this project.

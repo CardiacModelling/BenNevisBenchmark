@@ -7,6 +7,7 @@ from .randomiser import Randomiser
 from tqdm import tqdm
 import optuna
 from collections import namedtuple
+from io import StringIO
 
 
 def pad_list(ls, mode='last'):
@@ -741,12 +742,14 @@ class AlgorithmInstance:
 
     def params_to_latex(self, int_fields=[]):
         d = self.trial.params
+        output = StringIO()
         for k, v in d.items():
             kk = k.replace('_', '\\_')
             if k in int_fields:
-                print(f'& \\texttt{{{kk}}} & {v} \\\\')
+                print(f'& \\texttt{{{kk}}} & {v} \\\\', file=output)
             else:
-                print(f'& \\texttt{{{kk}}} & {float_to_latex(v)} \\\\')
+                print(f'& \\texttt{{{kk}}} & {float_to_latex(v)} \\\\', file=output)
+        return output.getvalue()
 
     def performance_to_latex(self):
         run_num = len(self.restart_results)
@@ -755,9 +758,16 @@ class AlgorithmInstance:
         ah = d['avg_height']
         ert = d['ert']
         gert = d['gary_ert']
-        print(self.algorithm.name.replace('_', ' '), end='\t')
-        print(f'& {run_num}', end='\t')
-        print(f'& {round(sr * 100)}\\%', end='\t')
-        print(f'& {round(ah)}', end='\t')
-        print(f'& {float_to_latex(ert)} ', end='\t')
-        print(f'& {float_to_latex(gert)} ', end='\\\\')
+
+        output = StringIO()
+
+        def print_to_str(s, end):
+            print(s, end=end, file=output)
+
+        print_to_str(self.algorithm.name.replace('_', ' '), end='\t')
+        print_to_str(f'& {run_num}', end='\t')
+        print_to_str(f'& {round(sr * 100)}\\%', end='\t')
+        print_to_str(f'& {round(ah)}', end='\t')
+        print_to_str(f'& {float_to_latex(ert)} ', end='\t')
+        print_to_str(f'& {float_to_latex(gert)} ', end='\\\\')
+        return output.getvalue()

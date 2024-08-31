@@ -1,5 +1,6 @@
 Compile this library called `basin` (on Ubuntu):
 ```bash
+cd basin-problem
 sudo apt install python3.10-dev g++
 pip install pybind11
 python setup.py install
@@ -34,7 +35,7 @@ The note books in `./ipynb`:
 - `fig-1.ipynb` plots (entire map + Ben Nevis + Ben Macdui + height histogram) figure;
 - `plot-boa.ipynb` gives a method for plotting the b.o.a. labels over the height map;
 - `largest-area.ipynb` investigates the local maxima with the largest b.o.a. areas (excluding seas);
-- `table-1-2.ipynb` calculates the data for table 1 and 2 in the paper;
+- `table-1.ipynb` calculates the data for Table 1 in the paper;
 - `sea-maxima.ipynb` investigates the local maxima under sea level and 'flat' & 'strict' local maxima.
 
 PS. b.o.a. stands for basin of attraction(s) in these files.
