@@ -4,7 +4,7 @@
 
 - The main problem: Finding Ben Nevis on the whole GB height map.
 - Local problems: Finding the highest point in a hand-picked region.
-  - `nevis. schiehallion`
+  - `nevis.schiehallion`
   - `nevis.macdui`
 - (TODO) Tile problems: Finding the highest point in two-letter tiles, so that we have a large problem space. (low priority?)
 
