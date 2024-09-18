@@ -6,8 +6,10 @@ import matplotlib.colors
 import matplotlib.figure
 import nevis
 from matplotlib.animation import FuncAnimation
+from typing import Literal
 
 
+# The following function is a copy from the nevis module with some modifications
 def plot(boundaries=None, labels=None, trajectory=None, points=None,
          gray_points=None, red_points=None,
          scale_bar=True, big_grid=False, small_grid=False,
@@ -288,7 +290,29 @@ def plot(boundaries=None, labels=None, trajectory=None, points=None,
 
 
 class ResultAnimation:
-    def __init__(self, result, maxima_heights, mode='iterations', interval=1000, blit=True, frame_num=None):
+    def __init__(self, result, maxima_heights, mode: Literal['iterations', 'evaluations'] = 'iterations',
+                 interval=1000, blit=True, frame_num=None):
+        """
+        Initializes the ResultAnimation class.
+
+        Parameters
+        ----------
+        result : Result
+            The Result object.
+        maxima_heights : list
+            A list of local maxima heights, produced by the basin_problem scripts.
+        mode : Literal['iterations', 'evaluations'], optional
+            The mode of the animation, either 'iterations' (for iteration-based frames) or
+            'evaluations' (for evaluation-based frames). Default is 'iterations'.
+        interval : int, optional
+            Time interval between frames in milliseconds. Default is 1000ms.
+        blit : bool, optional
+            Whether to use blitting for faster rendering. Default is True.
+            bilt is always set to False when mode is 'evaluations'.
+        frame_num : int, optional
+            The number of frames in the animation. If not provided, it defaults to the length
+            of iterations or evaluations based on the mode.
+        """
         self.result = result
         self.maxima_heights = maxima_heights
         self.best_height_so_far = np.min(self.maxima_heights)
@@ -309,9 +333,26 @@ class ResultAnimation:
                 range(frame_num), init_func=self.init, interval=interval, blit=False
             )
         else:
-            raise ValueError("Invalid mode; should be either 'iterations' or 'evaluations'.")
+            raise ValueError(
+                "Invalid mode; should be either 'iterations' or 'evaluations'.")
 
     def init(self):
+        """
+        Initializes the animation and sets up the plotting layout.
+
+        Sets up the figure with multiple subplots and configures the axes, colors, and plots
+        the initial background data and local maxima histogram. Initializes the plot elements
+        that will be updated during the animation.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        tuple
+            A tuple of line objects representing the plots to be animated.
+        """
         maxima_heights = self.maxima_heights
         fig = self.fig
         # Define the GridSpec layout
@@ -420,6 +461,21 @@ class ResultAnimation:
         return self.ln11, self.ln12, self.ln21, self.ln22, self.ln31, self.ln32, self.ln41, self.ln42
 
     def update_evaluation(self, i):
+        """
+        Updates the animation for evaluation-based frames.
+
+        This method updates the plot data for a specific evaluation frame, showing
+        points evaluated during optimization and updating the best height so far.
+
+        Parameters
+        ----------
+        i : int
+            The index of the current evaluation frame.
+
+        Returns
+        -------
+        None
+        """
         res = self.result
         ln11, ln12, ln21, ln22, _, _, ln41, ln42 = self.ln11, self.ln12, self.ln21, self.ln22, \
             self.ln31, self.ln32, self.ln41, self.ln42
@@ -477,6 +533,19 @@ class ResultAnimation:
         # return ln11, ln12, ln21, ln22, ln31, ln32, ln41, ln42
 
     def update(self, i):
+        """
+        Updates the plot data for the current iteration frame.
+
+        Parameters
+        ----------
+        i : int
+            The index of the current iteration frame.
+
+        Returns
+        -------
+        tuple
+            A tuple of updated line objects for the animated plots.
+        """
         res = self.result
         ln11, ln12, ln21, ln22, ln31, ln32, ln41, ln42 = self.ln11, self.ln12, self.ln21, self.ln22, \
             self.ln31, self.ln32, self.ln41, self.ln42
@@ -509,4 +578,20 @@ class ResultAnimation:
         return ln11, ln12, ln21, ln22, ln31, ln32, ln41, ln42
 
     def save(self, file_name='animation.mp4', writer='ffmpeg', fps=1):
+        """
+        Saves the animation to a video file.
+
+        Parameters
+        ----------
+        file_name : str, optional
+            The name of the output file. Default is 'animation.mp4'.
+        writer : str, optional
+            The writer to use for saving the animation. Default is 'ffmpeg'.
+        fps : int, optional
+            Frames per second for the video. Default is 1.
+
+        Returns
+        -------
+        None
+        """
         self.anim.save(file_name, writer=writer, fps=fps)
