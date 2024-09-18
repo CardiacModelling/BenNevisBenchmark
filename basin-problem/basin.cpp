@@ -1,6 +1,7 @@
+#include <iostream>
+#include <map>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
-#include <bits/stdc++.h>
 
 namespace py = pybind11;
 
