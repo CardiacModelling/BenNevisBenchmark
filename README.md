@@ -6,7 +6,7 @@ Tested on Ubuntu 22.04.3 LTS with Python 3.10.12.
 
 1. Use a Python virtual environment: 
 `python3 -m venv venv && source venv/bin/activate`.
-2. Install the required packages `pip install -r requirements.txt`.
+2. Install the required packages `pip install -r requirements.txt`. Alternatively, you may run `pip install numpy pandas matplotlib seaborn scipy nevis optuna optuna-dashboard pints nlopt jupyter ipython pymongo pybind11 python-dotenv`.
 3. Run the the algorithm of finding local optima and their basin of attraction (as specified in `basin-problem/README.md`). In other words, you need to run:
 ```bash
 cd basin-problem
