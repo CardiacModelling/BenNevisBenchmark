@@ -25,7 +25,10 @@ if __name__ == '__main__':
         maxima = np.load('res/maxima.npy')
         area = basin.count_basin_area(label, len(maxima), data)
         np.save('res/area-with-sea.npy', area)
-        print(np.sum(area))
+        print('The sum of area is ', np.sum(area),
+              ', which should be 364000000.')
+        print('If the number is wrong, remove `build` and `basin.egg-info` '
+              'and run `python3 setup.py install` again.')
 
     elif run_num == '1':
         label, sn, maxima, path_sum = find_labels(data)
