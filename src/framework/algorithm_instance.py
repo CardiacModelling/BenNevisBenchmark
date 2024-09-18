@@ -264,6 +264,8 @@ class AlgorithmInstance:
 
     @property
     def restart_results(self):
+        """For an early-terminating algorithm, turn all the runs into the runs of the
+        multi-start version of the algorithm."""
         if self.cache_enabled and self._restart_results != []:
             return self._restart_results
         RestartResult = namedtuple('RestartResult', [
@@ -283,7 +285,7 @@ class AlgorithmInstance:
         end_of_iterations = []
         points = None
 
-        for i, result in enumerate(self.results):
+        for result in self.results:
             gary_score = max(gary_score, result.gary_score)
             ret_height = max(ret_height, result.ret_height)
             is_success = (is_success or result.is_success)
@@ -293,21 +295,22 @@ class AlgorithmInstance:
             else:
                 points = np.concatenate((points, result.points))
             distances = np.concatenate((distances, result.distances))
-            end_of_iterations.extend(list(i + eval_num for i in result.end_of_iterations))
+            end_of_iterations.extend(list(j + eval_num for j in result.end_of_iterations))
             eval_num += result.eval_num
 
-            if is_success or eval_num >= MAX_FES or i == len(self.results) - 1:
-                if points is not None:
-                    restart_results.append(RestartResult(
-                        gary_score=gary_score,
-                        is_success=is_success,
-                        eval_num=eval_num,
-                        ret_height=ret_height,
-                        heights=heights,
-                        distances=distances,
-                        points=points,
-                        end_of_iterations=end_of_iterations,
-                    ))
+            # We will discard the last `restart run' if it is not long enough
+            # to either be successful or reach MAX_FES
+            if is_success or eval_num >= MAX_FES:
+                restart_results.append(RestartResult(
+                    gary_score=gary_score,
+                    is_success=is_success,
+                    eval_num=eval_num,
+                    ret_height=ret_height,
+                    heights=heights,
+                    distances=distances,
+                    points=points,
+                    end_of_iterations=end_of_iterations,
+                ))
                 gary_score, is_success, eval_num, ret_height = 0, False, 0, 0
                 heights, distances = np.array([]), np.array([])
                 end_of_iterations = []
@@ -315,7 +318,7 @@ class AlgorithmInstance:
         self._restart_results = restart_results
         return restart_results
 
-    def performance_measures(self, max_instance_fes=None, using_restart_results=True):
+    def performance_measures(self, max_instance_fes=None, using_restart_results=False):
         """
         Return all the performance measures of the instance. It's safe to run this
         method if even the results are ``partial''.
@@ -521,7 +524,7 @@ class AlgorithmInstance:
 
     #     plt.show()
 
-    def plot_convergence_graph(self, downsampling=1, img_path=None, using_restart_results=True):
+    def plot_convergence_graph(self, downsampling=1, img_path=None, using_restart_results=False):
         """
         Plot a convergence graph across all instances.
 
@@ -616,7 +619,7 @@ class AlgorithmInstance:
         plt.savefig(img_path, bbox_inches='tight') if img_path else plt.show()
 
     def plot_stacked_graph(self, img_path=None, mode='last',
-                           using_restart_results=True, with_legends=True, fig=None, ax=None):
+                           using_restart_results=False, with_legends=True, fig=None, ax=None):
         """Plot a stacked graph for all instances."""
 
         assert not self.results_patial, "Results must be fully loaded."
@@ -751,13 +754,14 @@ class AlgorithmInstance:
                 print(f'& \\texttt{{{kk}}} & {float_to_latex(v)} \\\\', file=output)
         return output.getvalue()
 
-    def performance_to_latex(self):
-        run_num = len(self.restart_results)
-        d = self.performance_measures()
-        sr = d['success_rate']
-        ah = d['avg_height']
-        ert = d['ert']
-        gert = d['gary_ert']
+    def performance_to_latex(self, using_restart_results=False):
+        results = self.restart_results if using_restart_results else self.results
+        run_num = len(results)
+        performance_dict = self.performance_measures(using_restart_results=using_restart_results)
+        sr = performance_dict['success_rate']
+        ah = performance_dict['avg_height']
+        ert = performance_dict['ert']
+        gert = performance_dict['gary_ert']
 
         output = StringIO()
 
