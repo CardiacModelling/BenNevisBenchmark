@@ -326,8 +326,6 @@ py::array_t<int> count_basin_area(
   size_t m = label_array.request().shape[0];
   size_t n = label_array.request().shape[1];
 
-  double* h = static_cast<double*>(h_array.request().ptr);
-
   for (size_t i = 0; i < m; i++) {
     for (size_t j = 0; j < n; j++) {
       const int &x = label[i * n + j];
