@@ -2,7 +2,7 @@
 
 ## Reproducing the figures and tables in the paper
 
-An Ubuntu environment is assumed.
+Tested on Ubuntu 22.04.3 LTS with Python 3.10.12.
 
 1. Use a Python virtual environment: 
 `python3 -m venv venv && source venv/bin/activate`.
