@@ -6,7 +6,7 @@
 namespace py = pybind11;
 
 const double NEG_INF = -1e100;
-const double EPS = 1e-5;
+
 const std::vector<std::pair<int, int>> neighbors = {
     {1, 0}, 
     {1, 1},
@@ -17,7 +17,6 @@ const std::vector<std::pair<int, int>> neighbors = {
     {0, -1}, 
     {1, -1}, 
 };
-const int FLAG = 100;
 
 // check if a coordinate (x, y) is within the valid range [0, m) \times [0, n)
 bool valid_coor(int m, int n, int x, int y) {
