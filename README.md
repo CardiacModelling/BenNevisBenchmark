@@ -22,6 +22,15 @@ and then run `python calculate.py` twice. Then `cd ..`.
 6. Go to `./ipynb/plots/` and run `all.ipynb`. You should then find in `./ipynb/plots/imgs/` three figures: `combined-agg.png`, `combined-hb.png` and `output-ert.png`, which correspond to Figures 2, 3, 4 in the paper. Tables 5 and 6 are also produced in this notebook.
 
 ## File structures
+
+### `./src`
+
+Class definitions for the benchmarking framework. 
+
+- `./src/framework` contains class definitions for the framework.
+- `./src/algorithms` contains algorithms defined using the framework. 
+- `./src/tutorial.ipynb` is a tutorial for using this framework. 
+
 ### `./ipynb`
 
 Some Jupyter notebooks.
@@ -34,6 +43,7 @@ Some Jupyter notebooks.
 - `all.ipynb` Plot most tables and figures in the paper.
 - `de.ipynb` Generating plots and animations for Differential Evolution.
 - `nelder-mead-multi.ipynb` Generating plots and animations for Nelder-Mead.
+- `animation` This directory contains some sample animations.
 
 #### `./ipynb/legacy`
 
@@ -54,15 +64,6 @@ This directory has some notebooks from early trials. Some algorithms used have b
 
 Scripts for finding all the local optima and their basin of attraction on the grid.
 
-
-### `./src`
-
-Class definitions for the benchmarking framework. 
-
-`./src/framework` contains class definitions for the framework and `./src/algorithms` contains algorithms defined using the framework. 
-
-`./src/tutorial.ipynb` is a tutorial for using this framework. 
-  
 ### `./img`
 
 Images used in documents and Jupyter notebooks.
