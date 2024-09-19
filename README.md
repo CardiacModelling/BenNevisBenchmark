@@ -1,5 +1,11 @@
 # A `nevis`-based benchmark framework for optimisers
 
+This repository provides a benchmark whose results are presented in the paper:  
+"**Where’s Ben Nevis? A 2D optimisation benchmark with 957,174 local optima based on Great Britain terrain data**" 
+by Yuhang Wei, Michael Clerx, Gary R. Mirams, (2024)
+
+This benchmark uses the [nevis](https://github.com/CardiacModelling/BenNevis) package which turns [Ordnance Survey Terrain 50 data](https://www.ordnancesurvey.co.uk/products/os-terrain-50) into a linearly interpolated surface for optimisation problems.
+
 ## Reproducing the figures and tables in the paper
 
 Tested on Ubuntu 22.04.3 LTS with Python 3.10.12.
