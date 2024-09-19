@@ -16,10 +16,13 @@ class Algorithm:
         The name of the algorithm.
     func : function
         The function that runs the algorithm. This function should be defined
-        using the ``optimizer`` decorator in ``runner.py``; alternatively, this function should
-        take three arguments: ``rand_seed``, ``init_guess``, and ``trial``, where
+        using the ``optimizer`` decorator in ``runner.py``; alternatively,
+        this function should
+        take three arguments: ``rand_seed``, ``init_guess``, and ``trial``,
+        where
         ``rand_seed`` is the random seed used for a run, ``init_guess`` is
-        the initial guess for a run, and ``trial`` is the ``Trial`` object used for
+        the initial guess for a run, and ``trial`` is the ``Trial`` object
+        used for
         specifying the hyper-parameters of an algorithm instance.
     version : int
         The version of the algorithm. This is used to distinguish between
@@ -28,12 +31,15 @@ class Algorithm:
         (i.e. change the function body of ``func``), you should
         change the version number.
     best_instance : AlgorithmInstance
-        The best algorithm instance found by the hyper-parameter tuning process.
+        The best algorithm instance found by the hyper-parameter tuning
+        process.
 
     Methods
     -------
-    tune_params(db_path, iter_num, measure, direction, save_handler, max_instance_fes, plot_path, make_all_plots)
-        Launch a hyper-parameter tuning process of the algorithm by generating ``iter_num``
+    tune_params(db_path, iter_num, measure, direction, save_handler,
+    max_instance_fes, plot_path, make_all_plots)
+        Launch a hyper-parameter tuning process of the algorithm by generating
+        ``iter_num``
         algorithm instances and saving the results to the specified database.
     load_best_instance(db_path)
         Load the best algorithm instance from the study database.
@@ -67,9 +73,10 @@ class Algorithm:
         direction='minimize',
         save_handler=None,
         max_instance_fes=MAX_INSTANCE_FES,
-        using_restart_results=True,
+        using_restart_results=False,
         plot_path=None,
         make_all_plots=True,
+        seed=None,
     ):
         """
         Tune the hyper-parameters of the algorithm.
@@ -79,7 +86,8 @@ class Algorithm:
         db_path : string
             The path to the database file.
         iter_num : int
-            The number of iterations to run the hyper-parameter tuning, i.e. the number of instances to generate.
+            The number of iterations to run the hyper-parameter tuning, i.e.
+            the number of instances to generate.
         measure : string
             The performance measure to use for the hyper-parameter tuning.
         direction : 'minimize' or 'maximize'
@@ -90,11 +98,14 @@ class Algorithm:
             The maximum number of function evaluations for a single instance.
         using_restart_results: bool
             Whether we use restart results to calculate performance measures.
-            Set to False for a global algorithm which always exhaust the function evaluations.
+            Set to False for a global algorithm which always exhaust the
+            function evaluations.
         plot_path : string
             The path to save the plots.
         make_all_plots : bool
             Whether to make all plots or just the best instance's plots.
+        seed : int
+            Random seed for the optuna sampler.
         """
 
         def objective(trial: optuna.Trial):
@@ -105,13 +116,17 @@ class Algorithm:
                     img_path=f'{plot_path}/{trial._trial_id}-c.png')
                 instance.plot_stacked_graph(
                     img_path=f'{plot_path}/{trial._trial_id}-s.png')
-            return instance.performance_measures(using_restart_results=using_restart_results)[measure]
+            return instance.performance_measures(
+                using_restart_results=using_restart_results)[measure]
 
+        sampler = None if seed is None else optuna.samplers.TPESampler(
+            seed=seed)
         study = optuna.create_study(
             direction=direction,
             study_name=f'{self.name}-{self.version}',
             storage=f'sqlite:///{db_path}',
             load_if_exists=True,
+            sampler=sampler
         )
 
         # when running for the first time and when a set of
