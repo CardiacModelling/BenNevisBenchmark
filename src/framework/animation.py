@@ -114,10 +114,7 @@ def plot(boundaries=None, labels=None, trajectory=None, points=None,
         """ Convert meters to array indices (which equal image coordinates) """
         x = (x - offset[0]) / d_new[0] * nx
         y = (y - offset[1]) / d_new[1] * ny
-        try:
-            x, y = int(x), int(y)
-        except TypeError:
-            x, y = x.astype(int), y.astype(int)
+        x, y = x.astype(int), y.astype(int)
         return x, y
 
     # Plot
