@@ -16,9 +16,9 @@ python setup.py install
 and then run `python calculate.py` twice. Then `cd ..`.
 
 4. Go to `./basin-problem/ipynb/` and run `fig-1.ipynb` and `table-1.ipynb` to produce Figure 1 and Table 1. 
-4. Create a directory `./result/`.
-5. `cd src`, then run `python3 run.py`. This script will run the hyper-parameter tuning process for each of the following algorithms: CMA-ES, Differential Evolution, Dual Annealing, MLSL, Nelder-Mead, and PSO.
-6. Go to `./ipynb/plots/` and run `all.ipynb`. You should then find in `./ipynb/plots/imgs/` three figures: `combined-agg.png`, `combined-hb.png` and `output-ert.png`, which correspond to Figures 2, 3, 4 in the paper. Tables 5 and 6 are also produced in this file.
+4. Create a directory `./result/` by `mkdir result`.
+5. Navigate to the `src` directory by `cd src`, then run `python3 run.py cmaes de da mlsl nm pso`. This script will run the hyper-parameter tuning process and save the run results for the best instance for each of the following algorithms: CMA-ES, Differential Evolution, Dual Annealing, MLSL, Nelder-Mead, and PSO (Nelder-Mead does not have hyper-parameters so the tuning process is skipped). To speed up the process, you can run the tuning process for different algorithms concurrently in separate terminals; for example, you could run `python3 run.py cmaes nm da` in one terminal and `python3 run.py pso mlsl de` in another. For a full list of available options, use `python3 run.py --help`. 
+6. Go to `./ipynb/plots/` and run `all.ipynb`. You should then find in `./ipynb/plots/imgs/` three figures: `combined-agg.png`, `combined-hb.png` and `output-ert.png`, which correspond to Figures 2, 3, 4 in the paper. Tables 5 and 6 are also produced in this notebook.
 
 ## File structures
 ### `./ipynb`
