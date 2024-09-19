@@ -67,7 +67,7 @@ def run_pso(
 
 
 pso = Algorithm(
-    name='pso',
+    name='PSO',
     func=run_pso,
     version=3,
     default_params={
