@@ -35,7 +35,7 @@ Class definitions for the benchmarking framework.
 
 - `./src/framework` contains class definitions for the framework.
 - `./src/algorithms` contains algorithms defined using the framework. 
-- `./src/tutorial.ipynb` is a tutorial for using this framework. 
+- `./src/tutorial.ipynb` is a **tutorial** for using this framework. 
 
 ### `./ipynb`
 
@@ -49,7 +49,7 @@ Some Jupyter notebooks.
 - `all.ipynb` Plot most tables and figures in the paper.
 - `de.ipynb` Generating plots and animations for Differential Evolution.
 - `nelder-mead-multi.ipynb` Generating plots and animations for Nelder-Mead.
-- `animation` This directory contains some sample animations.
+- `animation` This directory contains some **sample animations**.
 
 #### `./ipynb/legacy`
 
