@@ -176,3 +176,5 @@ src/mlsl
 # run.py
 
 *.mp4
+
+*.svg
