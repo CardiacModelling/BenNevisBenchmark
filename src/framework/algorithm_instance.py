@@ -273,6 +273,7 @@ class AlgorithmInstance:
             'is_success',
             'eval_num',
             'ret_height',
+            'max_height',
             'heights',
             'distances',
             'end_of_iterations',
@@ -281,6 +282,7 @@ class AlgorithmInstance:
         restart_results = []
 
         gary_score, is_success, eval_num, ret_height = 0, False, 0, 0
+        max_height = 0
         heights, distances = np.array([]), np.array([])
         end_of_iterations = []
         points = None
@@ -288,6 +290,7 @@ class AlgorithmInstance:
         for result in self.results:
             gary_score = max(gary_score, result.gary_score)
             ret_height = max(ret_height, result.ret_height)
+            max_height = max(max_height, result.max_height)
             is_success = (is_success or result.is_success)
             heights = np.concatenate((heights, result.heights))
             if points is None:
@@ -310,8 +313,10 @@ class AlgorithmInstance:
                     distances=distances,
                     points=points,
                     end_of_iterations=end_of_iterations,
+                    max_height=max_height,
                 ))
                 gary_score, is_success, eval_num, ret_height = 0, False, 0, 0
+                max_height = 0
                 heights, distances = np.array([]), np.array([])
                 end_of_iterations = []
                 points = None
@@ -370,6 +375,7 @@ class AlgorithmInstance:
         success_evals = []
         failed_evals = []
         ret_heights = []
+        max_heights = []
 
         gary_score_sum = 0
 
@@ -380,6 +386,7 @@ class AlgorithmInstance:
             else:
                 failed_evals.append(eval_cnt)
             ret_heights.append(result.ret_height)
+            max_heights.append(result.max_height)
 
             gary_score_sum += result.gary_score
 
@@ -397,6 +404,7 @@ class AlgorithmInstance:
                 'par2': float('inf'),
                 'par10':  float('inf'),
                 'avg_height': np.mean(ret_heights),
+                'avg_max_height': np.mean(max_heights),
                 'ert': float('inf'),
                 'sp': float('inf'),
                 # 'ert_std': float('inf'),
@@ -432,6 +440,7 @@ class AlgorithmInstance:
             'par2': (failed_cnt * 2 * MAX_FES + success_eval_cnt) / run_num,
             'par10':  (failed_cnt * 10 * MAX_FES + success_eval_cnt) / run_num,
             'avg_height': np.mean(ret_heights),
+            'avg_max_height': np.mean(max_heights),
             'ert': avg_success_eval + (
                 (1 - success_rate) / success_rate * avg_failed_eval
             ),
@@ -759,7 +768,7 @@ class AlgorithmInstance:
         run_num = len(results)
         performance_dict = self.performance_measures(using_restart_results=using_restart_results)
         sr = performance_dict['success_rate']
-        ah = performance_dict['avg_height']
+        ah = performance_dict['avg_max_height']
         ert = performance_dict['ert']
         gert = performance_dict['gary_ert']
 

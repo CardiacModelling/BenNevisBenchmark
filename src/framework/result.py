@@ -87,6 +87,7 @@ class Result:
         trajectory=[],
         is_success=None,
         gary_score=None,
+        max_height=None,
         eval_num=None,
         len_points=None,
         info=None,
@@ -118,9 +119,10 @@ class Result:
                 'A partial result must have `is_success` and `eval_num`'
 
         if is_success is None:
-            self.is_success, self.eval_num, self.gary_score = self.success_eval()
+            self.is_success, self.eval_num, self.gary_score, self.max_height = self.success_eval()
         else:
             self.is_success, self.eval_num, self.gary_score = is_success, eval_num, gary_score
+            self.max_height = max_height
 
         self.set_info(info, algorithm_name, algorithm_version,
                       instance_index, result_index)
@@ -159,7 +161,7 @@ class Result:
         return np.array([_dist_to_ben(*p) for p in self.points])
 
     def success_eval(self):
-        """Return a tuple, (is_success, eval_num, gary_score), indicating if the result is
+        """Return a tuple, (is_success, eval_num, gary_score, max_height), indicating if the result is
         succeessful and how many function evaluations it used."""
 
         # if self.ret_height < SUCCESS_HEIGHT:
@@ -171,7 +173,7 @@ class Result:
                 break
             max_height = max(h, max_height)
             if h >= SUCCESS_HEIGHT:
-                return True, i, 10
+                return True, i, 10, max_height
 
         gary_score = 0
         for g_h, g_p in GARY_SCORE_CONFIG:
@@ -179,7 +181,7 @@ class Result:
                 gary_score = g_p
                 break
 
-        return False, min(MAX_FES, self.len_points), gary_score
+        return False, min(MAX_FES, self.len_points), gary_score, max_height
 
     def __repr__(self) -> str:
         return str(self.to_dict())
@@ -203,6 +205,7 @@ class Result:
             'eval_num': self.eval_num,
             'len_points': self.len_points,
             'gary_score': self.gary_score,
+            'max_height': self.max_height,
 
             'info': self.info,
         }
